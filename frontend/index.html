@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业管家</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/frontend/css/styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">作业管家</h1>
+                <p id="currentBatchName" class="text-xs text-gray-500 mt-0.5"></p>
+            </div>
+            <div class="flex gap-2">
+                <button id="imagesBtn" class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    图片
+                </button>
+                <button id="uploadBtn" class="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    + 添加作业
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 筛选栏 -->
+    <div class="bg-white border-b">
+        <div class="max-w-4xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
+            <button class="filter-btn active px-3 py-1 text-sm rounded-lg transition-colors" data-status="all">全部</button>
+            <button class="filter-btn px-3 py-1 text-sm rounded-lg transition-colors" data-status="todo">待完成</button>
+            <button class="filter-btn px-3 py-1 text-sm rounded-lg transition-colors" data-status="doing">进行中</button>
+            <button class="filter-btn px-3 py-1 text-sm rounded-lg transition-colors" data-status="done">已完成</button>
+        </div>
+    </div>
+
+    <!-- 作业列表 -->
+    <main class="max-w-4xl mx-auto px-4 py-6">
+        <div id="homeworkList" class="space-y-3">
+            <!-- 动态生成作业项 -->
+        </div>
+        <div id="emptyState" class="hidden text-center py-12 text-gray-400">
+            <svg class="mx-auto h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            <p>暂无作业，点击上方"添加作业"开始</p>
+        </div>
+    </main>
+
+    <!-- 图片弹窗 -->
+    <div id="imagesModal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b">
+                <h2 class="text-lg font-semibold">参考图片</h2>
+                <button class="modal-close text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="imagesList" class="p-4 grid grid-cols-2 gap-4 overflow-y-auto max-h-96">
+                <!-- 动态生成图片 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传弹窗 -->
+    <div id="uploadModal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b">
+                <h2 class="text-lg font-semibold">添加作业</h2>
+                <button class="modal-close text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 图片预览区域 - 两个步骤共用 -->
+            <div id="imagePreviewSection" class="hidden p-4 border-b bg-gray-50">
+                <p class="text-sm font-medium text-gray-700 mb-2">图片预览</p>
+                <div id="previewImages" class="flex gap-2 overflow-x-auto pb-2">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+
+            <!-- 上传步骤 -->
+            <div id="uploadStep" class="flex-1 flex flex-col overflow-hidden">
+                <div id="dropZone" class="m-4 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer flex-1">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-sm text-gray-600">点击或拖拽上传作业图片</p>
+                    <p class="text-xs text-gray-400 mt-1">支持多张图片上传</p>
+                    <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
+                </div>
+
+                <!-- 上传进度 -->
+                <div id="uploadProgress" class="hidden px-4 pb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <p id="progressText" class="text-sm text-gray-600">正在上传图片...</p>
+                        <span id="progressPercent" class="text-sm text-gray-500">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 确认区域 -->
+            <div id="confirmStep" class="hidden flex-1 flex flex-col overflow-hidden">
+                <!-- 作业项列表 -->
+                <div class="flex-1 overflow-y-auto p-4">
+                    <p class="text-sm font-medium text-gray-700 mb-2">作业清单 <span id="itemCount" class="text-gray-400">(0)</span></p>
+                    <div id="itemList" class="space-y-2">
+                        <!-- 动态生成作业项 -->
+                    </div>
+                    <button id="addItemBtn" class="w-full py-2 text-sm text-blue-500 border border-dashed border-blue-300 rounded-lg hover:bg-blue-50">
+                        + 手动添加作业项
+                    </button>
+                </div>
+
+                <!-- 截止时间 -->
+                <div class="p-4 border-t">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">截止时间（可选）</label>
+                    <input type="datetime-local" id="deadlineInput" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div class="flex gap-2 p-4 border-t">
+                <button class="modal-close flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">取消</button>
+                <button id="confirmBtn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loadingToast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50">
+        加载中...
+    </div>
+
+    <script src="/frontend/js/api.js"></script>
+    <script src="/frontend/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+/**
+ * API 调用封装
+ */
+
+const API_BASE = window.location.origin;
+
+// 通用请求处理
+async function handleResponse(response) {
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: '请求失败' }));
+        throw new Error(error.message || error.detail || '请求失败');
+    }
+    return response.json();
+}
+
+// 显示提示
+function showToast(message, duration = 2000) {
+    const toast = document.getElementById('loadingToast');
+    toast.textContent = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, duration);
+}
+
+// API 对象
+const api = {
+    // 获取当前批次
+    async getCurrentBatch() {
+        const response = await fetch(`${API_BASE}/api/batches/current`);
+        return handleResponse(response);
+    },
+
+    // 获取批次列表
+    async getBatches(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_BASE}/api/batches?${query}`);
+        return handleResponse(response);
+    },
+
+    // 获取批次详情
+    async getBatch(batchId) {
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}`);
+        return handleResponse(response);
+    },
+
+    // 上传图片创建 draft 批次
+    async uploadDraft(files) {
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const response = await fetch(`${API_BASE}/api/upload/draft`, {
+            method: 'POST',
+            body: formData
+        });
+        return handleResponse(response);
+    },
+
+    // 解析 OCR 文本
+    async parseOCR(batchId) {
+        const formData = new FormData();
+        formData.append('batch_id', batchId);
+
+        const response = await fetch(`${API_BASE}/api/upload/parse`, {
+            method: 'POST',
+            body: formData
+        });
+        return handleResponse(response);
+    },
+
+    // 确认批次
+    async confirmBatch(batchId, items, deadlineAt) {
+        const response = await fetch(`${API_BASE}/api/upload/${batchId}/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: items,
+                deadline_at: deadlineAt
+            })
+        });
+        return handleResponse(response);
+    },
+
+    // 更新作业项状态
+    async updateItemStatus(itemId, status) {
+        const response = await fetch(`${API_BASE}/api/items/${itemId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        return handleResponse(response);
+    },
+
+    // 删除作业项
+    async deleteItem(itemId) {
+        const response = await fetch(`${API_BASE}/api/items/${itemId}`, {
+            method: 'DELETE'
+        });
+        return handleResponse(response);
+    },
+
+    // 获取科目列表
+    async getSubjects() {
+        const response = await fetch(`${API_BASE}/api/subjects`);
+        return handleResponse(response);
+    },
+
+    // 获取批次图片
+    async getBatchImages(batchId) {
+        const response = await fetch(`${API_BASE}/api/upload/${batchId}/images`);
+        return handleResponse(response);
+    },
+
+    // 更新图片类型
+    async updateImageType(batchId, imageId, imageType) {
+        const formData = new FormData();
+        formData.append('image_type', imageType);
+
+        const response = await fetch(`${API_BASE}/api/upload/${batchId}/images/${imageId}/type`, {
+            method: 'PATCH',
+            body: formData
+        });
+        return handleResponse(response);
+    }
+};

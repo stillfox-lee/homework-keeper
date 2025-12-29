@@ -1,0 +1,88 @@
+/* 自定义样式 */
+
+/* 筛选按钮样式 */
+.filter-btn {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.filter-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.filter-btn.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* 作业卡片样式 */
+.homework-item {
+    transition: all 0.2s ease;
+}
+
+.homework-item:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 模态框标签样式 */
+.tab-btn {
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+    color: #374151;
+}
+
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+/* 拖拽区域 */
+.drop-zone.dragover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+/* 进度条 */
+.progress-bar {
+    height: 4px;
+    background-color: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* 状态颜色 */
+.status-todo {
+    border-left-color: #d1d5db;
+}
+
+.status-doing {
+    border-left-color: #3b82f6;
+}
+
+.status-done {
+    border-left-color: #10b981;
+}
+
+/* 动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.homework-item {
+    animation: fadeIn 0.2s ease;
+}

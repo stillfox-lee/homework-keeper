@@ -1,0 +1,23 @@
+[project]
+name = "homework-keeper"
+version = "0.1.0"
+description = "学生作业管理系统 - 通过 OCR 识别作业照片"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "sqlalchemy>=2.0.23",
+    "paddleocr>=2.7.0",
+    "paddlepaddle>=2.5.0",
+    "pillow>=10.0.0",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+    "pydantic-settings>=2.12.0",
+]
+
+[project.scripts]
+init = "backend.scripts.init:init_all"
+
+[tool.uv]
+dev-dependencies = []
