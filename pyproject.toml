@@ -18,6 +18,10 @@ dependencies = [
 
 [project.scripts]
 init = "backend.scripts.init:init_all"
+serve = "backend.scripts.serve:main"
+
+[tool.setuptools]
+packages = ["backend"]
 
 [tool.uv]
 dev-dependencies = []

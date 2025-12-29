@@ -42,6 +42,8 @@ def _batch_image_to_response(img: BatchImage) -> BatchImageResponse:
         sort_order=img.sort_order,
         image_type=img.image_type,
         raw_ocr_text=img.raw_ocr_text,
+        ocr_status=img.ocr_status,
+        ocr_error=img.ocr_error,
         created_at=img.created_at
     )
 
@@ -104,9 +106,9 @@ async def upload_draft_batch(
             f.write(content)
 
         # OCR 识别
-        ocr_text = ocr_service.recognize_image(str(file_path))
-        if ocr_text:
-            all_ocr_text.append(ocr_text)
+        ocr_result = ocr_service.recognize_image(str(file_path))
+        if ocr_result.success:
+            all_ocr_text.append(ocr_result.text)
 
         # 创建图片记录
         batch_image = BatchImage(
@@ -116,7 +118,9 @@ async def upload_draft_batch(
             file_size=len(content),
             sort_order=i,
             image_type='homework',  # 默认为作业清单类型
-            raw_ocr_text=ocr_text
+            raw_ocr_text=ocr_result.text,
+            ocr_status='success' if ocr_result.success else 'failed',
+            ocr_error=ocr_result.error
         )
         db.add(batch_image)
         uploaded_images.append(batch_image)
@@ -351,5 +355,54 @@ async def update_image_type(
 
     image.image_type = image_type
     db.commit()
+
+    return _batch_image_to_response(image)
+
+
+@router.post("/retry/{image_id}", response_model=BatchImageResponse)
+async def retry_ocr(
+    image_id: int,
+    child=Depends(get_current_child),
+    db: Session = Depends(get_db)
+):
+    """
+    重试失败的 OCR 识别
+
+    Args:
+        image_id: 图片ID
+
+    Returns:
+        更新后的图片记录
+    """
+    # 获取图片
+    image = db.query(BatchImage).filter(
+        BatchImage.id == image_id
+    ).first()
+
+    if not image:
+        raise HTTPException(status_code=404, detail="图片不存在")
+
+    # 验证批次所有权
+    batch = db.query(HomeworkBatch).filter(
+        HomeworkBatch.id == image.batch_id,
+        HomeworkBatch.child_id == child.id
+    ).first()
+
+    if not batch:
+        raise HTTPException(status_code=404, detail="批次不存在或无权访问")
+
+    # 重试 OCR
+    ocr_service = get_ocr_service()
+    file_path = settings.UPLOAD_DIR / image.file_path
+
+    ocr_result = ocr_service.recognize_image(str(file_path))
+
+    # 更新图片记录
+    image.raw_ocr_text = ocr_result.text
+    image.ocr_status = 'success' if ocr_result.success else 'failed'
+    image.ocr_error = ocr_result.error
+
+    db.commit()
+    db.refresh(image)
 
     return _batch_image_to_response(image)

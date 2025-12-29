@@ -18,15 +18,13 @@
 # 使用 uv（推荐）
 uv sync
 
-# 或使用 pip
-pip install -r requirements.txt
 ```
 
 ### 2. 初始化项目
 
 ```bash
 # 初始化数据库并预下载 OCR 模型
-uv run python -m backend.scripts.init
+uv run init
 ```
 
 首次运行会下载约 100MB 的 PaddleOCR 模型文件，请耐心等待。
@@ -34,12 +32,22 @@ uv run python -m backend.scripts.init
 ### 3. 启动服务
 
 ```bash
-uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+# 启动服务器
+uv run serve
+
+# 开发模式（自动重载）
+uv run serve --reload
+```
+
+其他脚本：
+
+```bash
+uv run python -m backend.scripts.test_ocr PATH
 ```
 
 ### 4. 访问应用
 
-打开浏览器访问：http://localhost:8000
+打开浏览器访问：<http://localhost:8000>
 
 ## 项目结构
 

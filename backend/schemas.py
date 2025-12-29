@@ -39,6 +39,8 @@ class BatchImageResponse(BaseModel):
     sort_order: int
     image_type: str  # homework / reference
     raw_ocr_text: Optional[str] = None
+    ocr_status: str  # pending/success/failed
+    ocr_error: Optional[str] = None
     created_at: datetime
 
     class Config:

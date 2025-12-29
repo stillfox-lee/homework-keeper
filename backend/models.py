@@ -87,6 +87,8 @@ class BatchImage(Base):
 
     # OCR 结果
     raw_ocr_text = Column(Text)
+    ocr_status = Column(String(20), default="pending")  # pending/success/failed
+    ocr_error = Column(Text)  # OCR 错误信息
 
     created_at = Column(DateTime, server_default=func.current_timestamp())
 
