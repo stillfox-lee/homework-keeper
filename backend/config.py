@@ -1,6 +1,7 @@
 """
 配置文件
 """
+
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
@@ -24,6 +25,12 @@ class Settings(BaseSettings):
 
     # 默认家庭令牌（本地开发使用）
     DEFAULT_FAMILY_TOKEN: str = "default123"
+
+    # VLM 配置（智谱 GLM-4V-Flash）
+    ZHIPU_API_KEY: str = ""
+    VLM_MODEL: str = "glm-4.6v-flash"  # 免费多模态模型
+    VLM_TIMEOUT: int = 60
+    VLM_MAX_RETRIES: int = 3
 
     class Config:
         env_file = ".env"

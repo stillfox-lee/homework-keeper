@@ -176,3 +176,46 @@ class FamilyResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ==================== VLM 相关 ====================
+
+class VLMParsedHomeworkItem(BaseModel):
+    """VLM 解析出的作业项（原始格式）"""
+    subject: str  # 科目名称
+    text: str  # 作业描述
+    imageFileName: str  # 图片索引，如 "index0"
+    has_reference: bool  # 是否有参考资料
+    referenceFileName: str = ""  # 参考资料索引，如 "index2"
+
+
+class VLMImageClassification(BaseModel):
+    """图片分类结果"""
+    homework_images: List[int]  # homework 图片的 sort_order 列表
+    reference_images: List[int]  # reference 图片的 sort_order 列表
+
+
+class VLMParseResult(BaseModel):
+    """VLM 完整解析结果"""
+    success: bool
+    classification: VLMImageClassification
+    items: List[ParsedHomeworkItem]  # 映射后的作业项
+    raw_items: List[VLMParsedHomeworkItem]  # 原始 VLM 返回
+    new_subjects: List[SubjectResponse] = []  # 新创建的科目
+    error: Optional[str] = None
+
+
+class VLMUploadDraftResponse(BaseModel):
+    """VLM 上传 draft 批次响应"""
+    success: bool
+    batch: DraftBatchInfo
+    batch_id: int
+    images: List[BatchImageResponse]
+    parsed: Optional[VLMParseResult] = None
+
+
+class VLMDraftConfirmRequest(BaseModel):
+    """确认 VLM draft 批次请求"""
+    items: List[HomeworkItemCreate]
+    image_classification: Optional[VLMImageClassification] = None  # 用户可修改
+    deadline_at: Optional[datetime] = None

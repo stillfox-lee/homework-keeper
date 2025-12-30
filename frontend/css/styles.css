@@ -1,77 +1,148 @@
-/* 自定义样式 */
+/* ============================================
+   温暖学生向主题 - CSS 变量系统
+   ============================================ */
 
-/* 筛选按钮样式 */
+:root {
+    /* 主色调 - 温暖琥珀橙 */
+    --color-primary: #F59E0B;
+    --color-primary-light: #FEF3E7;
+    --color-primary-hover: #D97706;
+
+    /* 状态颜色 */
+    --color-todo: #E5E7EB;
+    --color-doing: #F59E0B;
+    --color-done: #34D399;
+
+    /* 背景色 - 温暖奶油色 */
+    --color-bg-main: #FFFBF5;
+    --color-bg-secondary: #FEF3E7;
+    --color-bg-card: #FFFFFF;
+
+    /* 文字颜色 */
+    --color-text-primary: #1F2937;
+    --color-text-secondary: #78716C;
+    --color-text-muted: #9CA3AF;
+
+    /* 圆角 - 更大更亲和 */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+
+    /* 阴影 - 更柔和 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.07);
+
+    /* 过渡曲线 */
+    --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   筛选按钮样式
+   ============================================ */
+
 .filter-btn {
-    background-color: #f3f4f6;
-    color: #6b7280;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-md);
+    transition: all 0.25s var(--transition-smooth);
 }
 
 .filter-btn:hover {
-    background-color: #e5e7eb;
+    background-color: #FDE68A;
+    color: var(--color-text-primary);
 }
 
 .filter-btn.active {
-    background-color: #3b82f6;
+    background-color: var(--color-primary);
     color: white;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
-/* 作业卡片样式 */
+/* ============================================
+   作业卡片样式
+   ============================================ */
+
 .homework-item {
-    transition: all 0.2s ease;
+    transition: all 0.25s var(--transition-smooth);
+    border-radius: var(--radius-lg);
 }
 
 .homework-item:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
 }
 
-/* 模态框标签样式 */
+/* ============================================
+   模态框标签样式
+   ============================================ */
+
 .tab-btn {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: all 0.2s var(--transition-smooth);
 }
 
 .tab-btn:hover {
-    color: #374151;
+    color: var(--color-text-primary);
 }
 
 .tab-btn.active {
-    color: #3b82f6;
-    border-bottom-color: #3b82f6;
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
 }
 
-/* 拖拽区域 */
+/* ============================================
+   拖拽区域样式
+   ============================================ */
+
 .drop-zone.dragover {
-    border-color: #3b82f6;
-    background-color: #eff6ff;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
 }
 
-/* 进度条 */
+/* ============================================
+   进度条样式
+   ============================================ */
+
 .progress-bar {
-    height: 4px;
-    background-color: #e5e7eb;
-    border-radius: 2px;
+    height: 6px;
+    background-color: #E5E7EB;
+    border-radius: 4px;
     overflow: hidden;
 }
 
 .progress-bar-fill {
     height: 100%;
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, #FBBF24, #F59E0B);
+    border-radius: 4px;
+    transition: width 0.4s var(--transition-smooth);
 }
 
-/* 状态颜色 */
+/* ============================================
+   状态颜色
+   ============================================ */
+
 .status-todo {
-    border-left-color: #d1d5db;
+    border-left-color: var(--color-todo);
 }
 
 .status-doing {
-    border-left-color: #3b82f6;
+    border-left-color: var(--color-doing);
 }
 
 .status-done {
-    border-left-color: #10b981;
+    border-left-color: var(--color-done);
 }
 
-/* 动画 */
+/* ============================================
+   动画效果
+   ============================================ */
+
+/* 淡入动画 */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -84,5 +155,58 @@
 }
 
 .homework-item {
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.3s var(--transition-smooth);
+}
+
+/* 完成庆祝动画 */
+@keyframes celebrate {
+    0% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.03);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.homework-item.just-completed {
+    animation: celebrate 0.5s var(--transition-bounce);
+}
+
+/* ============================================
+   温暖主题辅助类
+   ============================================ */
+
+/* 温暖的背景层 */
+body {
+    background: linear-gradient(180deg, #FFFBF5 0%, #FFF7ED 100%);
+}
+
+/* 按钮悬停时的微光效果 */
+button:active {
+    transform: scale(0.97);
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D6D3D1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #A8A29E;
 }

@@ -43,6 +43,7 @@ uv run serve --reload
 
 ```bash
 uv run python -m backend.scripts.test_ocr PATH
+uv run python -m backend.scripts.test_vlm <图片路径>...
 ```
 
 ### 4. 访问应用

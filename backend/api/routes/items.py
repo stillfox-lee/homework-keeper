@@ -25,18 +25,9 @@ def _subject_response_dict(subject: Subject) -> dict:
 
 def _item_to_response(item: HomeworkItem, subject: Subject) -> HomeworkItemResponse:
     """作业项转响应"""
-    return HomeworkItemResponse(
-        id=item.id,
-        batch_id=item.batch_id,
-        source_image_id=item.source_image_id,
-        subject=_subject_response_dict(subject),
-        text=item.text,
-        key_concept=item.key_concept,
-        status=item.status,
-        started_at=item.started_at,
-        finished_at=item.finished_at,
-        created_at=item.created_at
-    )
+    response = HomeworkItemResponse.model_validate(item)
+    response.subject = _subject_response_dict(subject)  # type: ignore
+    return response
 
 
 @router.put("/{item_id}", response_model=HomeworkItemResponse)

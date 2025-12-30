@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from backend.config import settings
-from backend.api.routes import batch, items, subject, upload, analytics, family
+from backend.api.routes import batch, items, subject, analytics, family, v1_upload
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -29,9 +29,10 @@ app.add_middleware(
 app.include_router(batch.router)
 app.include_router(items.router)
 app.include_router(subject.router)
-app.include_router(upload.router)
 app.include_router(analytics.router)
 app.include_router(family.router)
+# V1 路由（使用 VLM）
+app.include_router(v1_upload.router)
 
 # 挂载静态文件目录
 app.mount("/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads")

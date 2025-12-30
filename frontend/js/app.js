@@ -10,6 +10,7 @@ const state = {
     draftBatch: null,        // 上传中的 draft 批次
     draftItems: [],          // 待确认的作业项
     previewImages: [],       // 上传的图片预览
+    draftImageClassification: null,  // VLM 图片分类结果
 };
 
 // ==================== DOM 元素 ====================
@@ -66,11 +67,11 @@ async function loadSubjects() {
         state.subjects = await api.getSubjects();
     } catch (error) {
         console.error('加载科目失败:', error);
-        // 默认科目
+        // 默认科目 - 温暖粉彩配色
         state.subjects = [
-            { id: 1, name: '语文', color: '#EF4444' },
-            { id: 2, name: '数学', color: '#3B82F6' },
-            { id: 3, name: '英语', color: '#10B981' },
+            { id: 1, name: '语文', color: '#FB7185' },  // 柔粉红
+            { id: 2, name: '数学', color: '#60A5FA' },  // 柔天蓝
+            { id: 3, name: '英语', color: '#4ADE80' },  // 柔草绿
         ];
     }
 }
@@ -119,17 +120,19 @@ function filterItems(items) {
 }
 
 function createHomeworkItemHTML(item) {
+    // 温暖主题配色
     const statusConfig = {
-        'todo': { border: 'border-gray-300', bg: 'bg-gray-100', text: 'text-gray-500' },
-        'doing': { border: 'border-blue-500', bg: 'bg-blue-100', text: 'text-blue-500' },
-        'done': { border: 'border-green-500', bg: 'bg-green-100', text: 'text-green-500' },
+        'todo': { border: 'border-gray-200', bg: 'bg-gray-50', text: 'text-gray-400' },
+        'doing': { border: 'border-amber-400', bg: 'bg-amber-50', text: 'text-amber-500' },
+        'done': { border: 'border-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-500' },
     };
     const config = statusConfig[item.status] || statusConfig['todo'];
 
+    // 操作按钮 - 温暖配色
     const actionButtons = {
-        'todo': `<button class="status-btn px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100" data-id="${item.id}" data-status="doing">开始</button>`,
-        'doing': `<button class="status-btn px-3 py-1 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100" data-id="${item.id}" data-status="done">完成</button>`,
-        'done': `<span class="text-sm text-green-500">已完成</span>`,
+        'todo': `<button class="status-btn px-3 py-1 text-sm bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors" data-id="${item.id}" data-status="doing">开始</button>`,
+        'doing': `<button class="status-btn px-3 py-1 text-sm bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors" data-id="${item.id}" data-status="done">完成</button>`,
+        'done': `<span class="text-sm text-emerald-500">已完成</span>`,
     };
 
     const duration = item.status === 'doing' && item.started_at
@@ -137,7 +140,7 @@ function createHomeworkItemHTML(item) {
         : '';
 
     return `
-        <div class="homework-item bg-white rounded-lg shadow-sm p-4 border-l-4 ${config.border}" data-id="${item.id}">
+        <div class="homework-item bg-white rounded-xl shadow-sm p-4 border-l-4 ${config.border}" data-id="${item.id}">
             <div class="flex items-start justify-between">
                 <div class="flex-1">
                     <div class="flex items-center gap-2 mb-1">
@@ -145,15 +148,15 @@ function createHomeworkItemHTML(item) {
                         <span class="px-2 py-0.5 text-xs rounded-full font-medium" style="background-color: ${item.subject.color}20; color: ${item.subject.color}">
                             ${item.subject.name}
                         </span>
-                        ${item.key_concept ? `<span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">${item.key_concept}</span>` : ''}
+                        ${item.key_concept ? `<span class="text-xs px-2 py-0.5 bg-stone-100 text-stone-500 rounded-full">${item.key_concept}</span>` : ''}
                     </div>
-                    <p class="text-gray-800">${item.text}</p>
+                    <p class="text-stone-700">${item.text}</p>
                     ${duration}
                 </div>
                 <div class="flex gap-2 ml-4">
                     ${actionButtons[item.status]}
                     ${item.status !== 'done' ? `
-                        <button class="delete-item-btn px-2 py-1 text-sm text-gray-400 hover:text-red-500" data-id="${item.id}">
+                        <button class="delete-item-btn px-2 py-1 text-sm text-stone-400 hover:text-red-500 transition-colors" data-id="${item.id}">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -182,13 +185,13 @@ function renderConfirmItems() {
 
 function createConfirmItemHTML(item, index) {
     return `
-        <div class="confirm-item flex gap-2 p-2 bg-gray-50 rounded-lg" data-index="${index}">
-            <select class="item-subject flex-0 border rounded px-2 py-1 text-sm" style="min-width: 80px">
+        <div class="confirm-item flex gap-2 p-2 bg-stone-50 rounded-xl border border-stone-100" data-index="${index}">
+            <select class="item-subject flex-0 border border-stone-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" style="min-width: 80px">
                 ${state.subjects.map(s => `<option value="${s.id}" ${item.subject_id === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
             </select>
-            <input type="text" class="item-text flex-1 border rounded px-2 py-1 text-sm" value="${item.text}" placeholder="作业内容">
-            <input type="text" class="item-concept w-24 border rounded px-2 py-1 text-sm" value="${item.key_concept || ''}" placeholder="关键概念">
-            <button class="remove-item px-2 text-gray-400 hover:text-red-500">
+            <input type="text" class="item-text flex-1 border border-stone-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" value="${item.text}" placeholder="作业内容">
+            <input type="text" class="item-concept w-24 border border-stone-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" value="${item.key_concept || ''}" placeholder="关键概念">
+            <button class="remove-item px-2 text-stone-400 hover:text-red-500 transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -200,11 +203,11 @@ function createConfirmItemHTML(item, index) {
 function renderPreviewImages() {
     elements.previewImages.innerHTML = state.previewImages.map((img, index) => `
         <div class="preview-image flex-shrink-0 relative group cursor-pointer" data-index="${index}">
-            <img src="${img.url}" alt="${img.name}" class="w-20 h-20 object-cover rounded-lg">
-            <div class="image-type-badge absolute top-1 left-1 px-1.5 py-0.5 text-xs rounded ${img.type === 'homework' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'}">
+            <img src="${img.url}" alt="${img.name}" class="w-20 h-20 object-cover rounded-xl shadow-sm">
+            <div class="image-type-badge absolute top-1 left-1 px-1.5 py-0.5 text-xs rounded-lg ${img.type === 'homework' ? 'bg-amber-500 text-white' : 'bg-stone-400 text-white'}">
                 ${img.type === 'homework' ? '作业' : '参考'}
             </div>
-            <button class="toggle-type absolute top-1 right-1 p-1 bg-white rounded shadow opacity-0 group-hover:opacity-100 transition-opacity" title="切换图片类型">
+            <button class="toggle-type absolute top-1 right-1 p-1 bg-white rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity" title="切换图片类型">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -223,11 +226,11 @@ function renderImagesModal() {
     if (homeworkImages.length > 0) {
         elements.imagesList.innerHTML += `
             <div class="col-span-2">
-                <p class="text-sm font-medium text-gray-700 mb-2">作业清单</p>
+                <p class="text-sm font-medium text-stone-700 mb-2">作业清单</p>
                 <div class="grid grid-cols-2 gap-4">
                     ${homeworkImages.map(img => `
                         <div class="relative">
-                            <img src="/uploads/${img.file_path}" alt="${img.file_name}" class="w-full rounded-lg cursor-pointer hover:opacity-90" onclick="window.open(this.src, '_blank')">
+                            <img src="/uploads/${img.file_path}" alt="${img.file_name}" class="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
                         </div>
                     `).join('')}
                 </div>
@@ -238,11 +241,11 @@ function renderImagesModal() {
     if (referenceImages.length > 0) {
         elements.imagesList.innerHTML += `
             <div class="col-span-2">
-                <p class="text-sm font-medium text-gray-700 mb-2">参考资料</p>
+                <p class="text-sm font-medium text-stone-700 mb-2">参考资料</p>
                 <div class="grid grid-cols-2 gap-4">
                     ${referenceImages.map(img => `
                         <div class="relative">
-                            <img src="/uploads/${img.file_path}" alt="${img.file_name}" class="w-full rounded-lg cursor-pointer hover:opacity-90" onclick="window.open(this.src, '_blank')">
+                            <img src="/uploads/${img.file_path}" alt="${img.file_name}" class="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
                         </div>
                     `).join('')}
                 </div>
@@ -251,7 +254,7 @@ function renderImagesModal() {
     }
 
     if (homeworkImages.length === 0 && referenceImages.length === 0) {
-        elements.imagesList.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-8">暂无图片</p>';
+        elements.imagesList.innerHTML = '<p class="col-span-2 text-center text-stone-400 py-8">暂无图片</p>';
     }
 }
 
@@ -261,11 +264,11 @@ function bindEvents() {
     elements.filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             elements.filterBtns.forEach(b => {
-                b.classList.remove('active', 'bg-blue-500', 'text-white');
-                b.classList.add('text-gray-600', 'hover:bg-gray-100');
+                b.classList.remove('active', 'bg-amber-500', 'text-white');
+                b.classList.add('text-stone-600', 'hover:bg-amber-100');
             });
-            btn.classList.add('active', 'bg-blue-500', 'text-white');
-            btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+            btn.classList.add('active', 'bg-amber-500', 'text-white');
+            btn.classList.remove('text-stone-600', 'hover:bg-amber-100');
             state.currentFilter = btn.dataset.status;
             renderHomeworkList();
         });
@@ -297,16 +300,16 @@ function bindEvents() {
     // 拖拽上传
     elements.dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        elements.dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        elements.dropZone.classList.add('border-amber-400', 'bg-amber-50');
     });
 
     elements.dropZone.addEventListener('dragleave', () => {
-        elements.dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        elements.dropZone.classList.remove('border-amber-400', 'bg-amber-50');
     });
 
     elements.dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        elements.dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        elements.dropZone.classList.remove('border-amber-400', 'bg-amber-50');
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
         if (files.length > 0) {
             handleFilesUpload(files);
@@ -359,36 +362,45 @@ async function handleFilesUpload(files) {
     const progressController = startProgress();
 
     try {
-        // 上传阶段
-        const result = await api.uploadDraft(files);
+        // VLM 一站式处理：上传 + OCR + 解析 + 分类
+        progressController.setStage('vlm');
+        const result = await api.v1UploadDraft(files);
         state.draftBatch = result.batch;
 
-        // 保存图片信息用于预览
+        // 保存图片信息用于预览（VLM 已完成分类）
         state.previewImages = result.images.map(img => ({
             id: img.id,
-            url: img.file_path,  // 后端已包含 /uploads/ 前缀
+            url: img.file_path,
             name: img.file_name,
             type: img.image_type,
         }));
 
-        // 显示图片预览区域（上传步骤）
+        // 显示图片预览区域
         renderPreviewImages();
         elements.imagePreviewSection.classList.remove('hidden');
 
-        // OCR 阶段
-        progressController.setStage('ocr');
-        const parseResult = await api.parseOCR(state.draftBatch.id);
+        // 从 VLM 解析结果中提取作业项
+        if (result.parsed && result.parsed.success) {
+            // 如果有新科目，添加到科目列表
+            if (result.parsed.new_subjects && result.parsed.new_subjects.length > 0) {
+                state.subjects.push(...result.parsed.new_subjects);
+            }
 
-        // 设置作业项 (API 返回数组，不是对象)
-        state.draftItems = (parseResult || []).map(item => ({
-            ...item,
-            tempId: Date.now() + Math.random(),
-        }));
+            state.draftItems = result.parsed.items.map(item => ({
+                ...item,
+                tempId: Date.now() + Math.random(),
+            }));
+            // 保存图片分类信息用于确认
+            state.draftImageClassification = result.parsed.classification;
+        } else {
+            state.draftItems = [];
+            state.draftImageClassification = null;
+        }
 
         // 完成进度
         progressController.complete();
 
-        // 延迟后切换到确认步骤（图片预览保持显示）
+        // 延迟后切换到确认步骤
         setTimeout(() => {
             elements.uploadStep.classList.add('hidden');
             elements.uploadProgress.classList.add('hidden');
@@ -400,8 +412,8 @@ async function handleFilesUpload(files) {
     } catch (error) {
         clearInterval(progressInterval);
         elements.progressText.textContent = '处理失败';
-        elements.progressBar.classList.remove('bg-blue-500');
-        elements.progressBar.classList.add('bg-red-500');
+        elements.progressBar.classList.remove('bg-gradient-to-r');
+        elements.progressBar.classList.add('bg-red-400');
         console.error('上传失败:', error);
         alert('上传失败: ' + error.message);
         closeModals();
@@ -423,6 +435,7 @@ async function handleConfirmBatch() {
                 subject_id: subjectId,
                 text: text,
                 key_concept: concept || null,
+                source_image_id: null,
             });
         }
     });
@@ -438,7 +451,13 @@ async function handleConfirmBatch() {
 
     try {
         showToast('正在保存...');
-        await api.confirmBatch(state.draftBatch.id, items, deadlineAt);
+        // 使用 V1 API，传递图片分类信息
+        await api.v1ConfirmBatch(
+            state.draftBatch.id,
+            items,
+            state.draftImageClassification,
+            deadlineAt
+        );
         showToast('保存成功！');
         closeModals();
         await loadCurrentBatch();
@@ -520,8 +539,30 @@ async function handlePreviewClick(e) {
         const newType = img.type === 'homework' ? 'reference' : 'homework';
 
         try {
-            await api.updateImageType(state.draftBatch.id, img.id, newType);
+            // 使用 V1 API 切换图片类型
+            await api.v1UpdateImageType(state.draftBatch.id, img.id, newType);
             img.type = newType;
+
+            // 更新分类状态
+            if (state.draftImageClassification) {
+                const homeworkImages = state.draftImageClassification.homework_images || [];
+                const referenceImages = state.draftImageClassification.reference_images || [];
+
+                if (newType === 'homework') {
+                    // 从 reference 移到 homework
+                    state.draftImageClassification.reference_images = referenceImages.filter(i => i !== index);
+                    if (!homeworkImages.includes(index)) {
+                        state.draftImageClassification.homework_images.push(index);
+                    }
+                } else {
+                    // 从 homework 移到 reference
+                    state.draftImageClassification.homework_images = homeworkImages.filter(i => i !== index);
+                    if (!referenceImages.includes(index)) {
+                        state.draftImageClassification.reference_images.push(index);
+                    }
+                }
+            }
+
             renderPreviewImages();
         } catch (error) {
             alert('切换失败: ' + error.message);
@@ -538,6 +579,7 @@ function openUploadModal() {
     state.draftBatch = null;
     state.draftItems = [];
     state.previewImages = [];
+    state.draftImageClassification = null;
 
     // 重置 UI
     elements.uploadStep.classList.remove('hidden');
@@ -549,8 +591,8 @@ function openUploadModal() {
 
     // 重置进度条
     elements.progressBar.style.width = '0%';
-    elements.progressBar.classList.remove('bg-red-500');
-    elements.progressBar.classList.add('bg-blue-500');
+    elements.progressBar.classList.remove('bg-red-400');
+    elements.progressBar.style.background = 'linear-gradient(90deg, #FBBF24, #F59E0B)';
     elements.progressPercent.textContent = '0%';
     elements.progressText.textContent = '正在上传图片...';
 
@@ -592,7 +634,8 @@ function updateProgressUI(percent, stage) {
     const stageTexts = {
         'upload': '正在上传图片...',
         'ocr': '正在识别作业内容...',
-        'parse': '正在解析作业项...'
+        'parse': '正在解析作业项...',
+        'vlm': '正在使用 AI 解析作业...'
     };
     elements.progressText.textContent = stageTexts[stage] || '处理中...';
 }

@@ -123,5 +123,53 @@ const api = {
             body: formData
         });
         return handleResponse(response);
+    },
+
+    // ==================== V1 API (使用 VLM) ====================
+
+    // V1: 上传图片创建 draft 批次（使用 VLM 解析）
+    async v1UploadDraft(files) {
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const response = await fetch(`${API_BASE}/api/v1/upload/draft`, {
+            method: 'POST',
+            body: formData
+        });
+        return handleResponse(response);
+    },
+
+    // V1: 确认批次（支持图片分类）
+    async v1ConfirmBatch(batchId, items, imageClassification, deadlineAt) {
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: items,
+                image_classification: imageClassification,
+                deadline_at: deadlineAt
+            })
+        });
+        return handleResponse(response);
+    },
+
+    // V1: 获取批次图片
+    async v1GetBatchImages(batchId) {
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`);
+        return handleResponse(response);
+    },
+
+    // V1: 更新图片类型
+    async v1UpdateImageType(batchId, imageId, imageType) {
+        const formData = new FormData();
+        formData.append('image_type', imageType);
+
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images/${imageId}/type`, {
+            method: 'PATCH',
+            body: formData
+        });
+        return handleResponse(response);
     }
 };

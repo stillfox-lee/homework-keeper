@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import Family, Child
-from backend.schemas import FamilyCreate, FamilyResponse
+from backend.schemas import FamilyCreate, FamilyResponse, ChildResponse
 from backend.api.deps import get_current_family
 
 router = APIRouter(prefix="/api/family", tags=["family"])
@@ -49,16 +49,9 @@ async def create_family(
     db.commit()
     db.refresh(family)
 
-    return FamilyResponse(
-        id=family.id,
-        name=family.name,
-        access_token=family.access_token,
-        child=ChildResponse(
-            id=child.id,
-            family_id=child.family_id,
-            name=child.name
-        )
-    )
+    response = FamilyResponse.model_validate(family)
+    response.child = ChildResponse.model_validate(child)
+    return response
 
 
 @router.get("/current", response_model=FamilyResponse)
@@ -69,13 +62,6 @@ async def get_current_family_info(
     """获取当前家庭信息"""
     child = db.query(Child).filter(Child.family_id == family.id).first()
 
-    return FamilyResponse(
-        id=family.id,
-        name=family.name,
-        access_token=family.access_token,
-        child=ChildResponse(
-            id=child.id,
-            family_id=child.family_id,
-            name=child.name
-        )
-    )
+    response = FamilyResponse.model_validate(family)
+    response.child = ChildResponse.model_validate(child)
+    return response
