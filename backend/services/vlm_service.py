@@ -160,9 +160,6 @@ JSON Schema：
 
 注意：只输出 JSON，不要添加任何其他说明文字。"""
 
-    # TODO: test case:
-    # 多张 HomeworkList 的图片试试看能不能解析
-
     def _safe_parse_json(self, text: str) -> Optional[Dict]:
         """安全解析 JSON，处理常见格式问题"""
         # 去除前后空白
@@ -194,7 +191,10 @@ JSON Schema：
         return None
 
     async def call_llm(
-        self, image_paths: List[str], subject_names: List[str], display_filenames: List[str] = None
+        self,
+        image_paths: List[str],
+        subject_names: List[str],
+        display_filenames: List[str] = None,
     ) -> VLMOutput:
         """
         核心方法：调用 LLM API 并返回解析结果
@@ -227,14 +227,18 @@ JSON Schema：
         client = self._ensure_client()
 
         # 使用显示文件名（原始上传文件名），如果没有提供则从路径提取
-        image_names = display_filenames if display_filenames else [Path(p).name for p in image_paths]
+        image_names = (
+            display_filenames
+            if display_filenames
+            else [Path(p).name for p in image_paths]
+        )
         logger.debug(f"image_names: {image_names}")
 
         # 构建消息内容
         content = [
             {"type": "text", "text": self._build_prompt(subject_names, image_names)}
         ]
-        logger.debug(f"Prompt 内容:\n{content[0]['text']}")
+        # logger.debug(f"Prompt 内容:\n{content[0]['text']}")
 
         # 添加图片
         for i, path in enumerate(image_paths):
@@ -301,7 +305,10 @@ JSON Schema：
                     raise ValueError(f"VLM 调用失败: {last_error}")
 
     async def parse_homework_images(
-        self, image_paths: List[str], subjects: List[Dict], original_filenames: List[str] = None
+        self,
+        image_paths: List[str],
+        subjects: List[Dict],
+        original_filenames: List[str] = None,
     ) -> "VLMResult":
         """
         解析作业图片 - 委托给业务逻辑层
@@ -321,7 +328,9 @@ JSON Schema：
         )
 
         parser = get_homework_parser_service()
-        return await parser.parse_homework_images(image_paths, subjects, original_filenames)
+        return await parser.parse_homework_images(
+            image_paths, subjects, original_filenames
+        )
 
 
 # 全局单例

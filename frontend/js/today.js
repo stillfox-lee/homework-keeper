@@ -8,9 +8,15 @@ const todayState = {
     batch: null,
     items: [],
     images: [],
-    currentImageIndex: 0,
     deadlineTimer: null,
 };
+
+// 创建图片查看器实例
+const imageViewer = createImageViewer({
+    viewerId: 'imageViewer',
+    getUrl: (item) => item.file_path,
+    loop: false  // 不循环切换
+});
 
 /**
  * 加载今日作业页面
@@ -259,9 +265,6 @@ async function handleStatusUpdate(itemId, status) {
  * 图片查看器
  */
 function openImageViewer(index) {
-    const viewer = document.getElementById('imageViewer');
-    const img = document.getElementById('imageViewerImg');
-
     // 按 image_type 分组
     const homeworkImages = todayState.images
         .filter(i => i.image_type === 'homework')
@@ -270,25 +273,9 @@ function openImageViewer(index) {
         .filter(i => i.image_type === 'reference')
         .sort((a, b) => a.sort_order - b.sort_order);
 
-    todayState.allImages = [...homeworkImages, ...referenceImages];
-    todayState.currentImageIndex = index;
-
-    img.src = todayState.allImages[index].file_path;
-    viewer.classList.remove('hidden');
-}
-
-function closeImageViewer() {
-    document.getElementById('imageViewer').classList.add('hidden');
-}
-
-function prevImage() {
-    todayState.currentImageIndex = (todayState.currentImageIndex - 1 + todayState.allImages.length) % todayState.allImages.length;
-    document.getElementById('imageViewerImg').src = todayState.allImages[todayState.currentImageIndex].file_path;
-}
-
-function nextImage() {
-    todayState.currentImageIndex = (todayState.currentImageIndex + 1) % todayState.allImages.length;
-    document.getElementById('imageViewerImg').src = todayState.allImages[todayState.currentImageIndex].file_path;
+    const allImages = [...homeworkImages, ...referenceImages];
+    imageViewer.setImages(allImages);
+    imageViewer.open(index);
 }
 
 /**
@@ -321,17 +308,15 @@ function showCompletionModal(batchId) {
 
 // 初始化事件监听
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('imageViewerClose').onclick = closeImageViewer;
-    document.getElementById('imageViewerPrev').onclick = prevImage;
-    document.getElementById('imageViewerNext').onclick = nextImage;
+    document.getElementById('imageViewerClose').onclick = () => imageViewer.close();
 
     // 键盘导航
     document.addEventListener('keydown', (e) => {
         const viewer = document.getElementById('imageViewer');
         if (viewer.classList.contains('hidden')) return;
 
-        if (e.key === 'Escape') closeImageViewer();
-        if (e.key === 'ArrowLeft') prevImage();
-        if (e.key === 'ArrowRight') nextImage();
+        if (e.key === 'Escape') imageViewer.close();
+        if (e.key === 'ArrowLeft') imageViewer.prev();
+        if (e.key === 'ArrowRight') imageViewer.next();
     });
 });

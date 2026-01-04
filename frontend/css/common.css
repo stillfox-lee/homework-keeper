@@ -21,6 +21,69 @@
     display: none;
 }
 
+/* ==================== Loading 组件 ==================== */
+
+/* Loading 全屏遮罩 */
+#loading {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Loading 内容卡片 */
+.loading-content {
+    background: white;
+    border-radius: 1.25rem;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+}
+
+/* 脉冲点容器 */
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* 单个脉冲点 */
+.loading-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: #F59E0B;
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(1) { animation-delay: 0s; }
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulse {
+    0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Loading 文字 */
+.loading-text {
+    font-size: 1rem;
+    color: #78716C;
+    margin: 0;
+}
+
 /* 顶部导航栏 */
 .top-nav {
     display: flex;
@@ -115,6 +178,15 @@
 
 .viewer-nav:hover {
     background-color: rgba(255, 255, 255, 0.3);
+}
+
+.viewer-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.viewer-nav:disabled:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .viewer-prev {

@@ -24,12 +24,14 @@ const editorState = {
     deadlineAt: null,
 };
 
-// ==================== 图片查看器状态 ====================
+// ==================== 图片查看器 ====================
 
-const editorImageViewerState = {
-    images: [],
-    currentIndex: 0,
-};
+// 创建编辑器图片查看器实例
+const editorImageViewer = createImageViewer({
+    viewerId: 'editorImageViewer',
+    getUrl: (item) => item.url,
+    loop: false  // 不循环切换
+});
 
 // ==================== DOM 元素 ====================
 
@@ -90,7 +92,7 @@ function bindEditorEvents() {
 
     // 保存按钮
     if (editorElements.saveBtn) {
-        editorElements.saveBtn.addEventListener('click', editorView.save);
+        editorElements.saveBtn.addEventListener('click', () => editorView.save());
     }
 
     // 添加作业项按钮
@@ -205,6 +207,11 @@ const editorView = {
         editorState.mode = mode;
         editorState.batchId = batchId;
         editorState.open = true;
+
+        // 确保科目数据已加载
+        if (!state.subjects || state.subjects.length === 0) {
+            state.subjects = await api.getSubjects();
+        }
 
         // 根据模式加载数据
         if (mode === 'edit' && batchId) {
@@ -335,10 +342,8 @@ const editorView = {
             return;
         }
 
-        // 收集截止时间
-        const deadlineAt = editorElements.deadlineInput.value
-            ? new Date(editorElements.deadlineInput.value).toISOString()
-            : null;
+        // 收集截止时间 - 直接发送 datetime-local 格式，后端 Pydantic 会自动解析
+        const deadlineAt = editorElements.deadlineInput.value || null;
 
         try {
             if (editorState.mode === 'new') {
@@ -515,11 +520,17 @@ async function handleEditorGalleryUpload() {
  */
 async function handleEditorImageUpload(files) {
     try {
+        // 显示 loading
+        showLoading('墨宝正在努力识别作业，请稍等...');
+
         // 上传图片并创建草稿批次
         const result = await api.v1UploadDraft(files);
 
         // 保存批次 ID
         editorState.batchId = result.batch.id;
+
+        // 保存截止时间
+        editorState.deadlineAt = result.batch.deadline_at;
 
         // 添加图片到列表
         const newImages = result.images.map(img => ({
@@ -548,11 +559,15 @@ async function handleEditorImageUpload(files) {
         // 重新渲染
         editorView.render();
 
+        // 隐藏 loading
+        hideLoading();
+
         // 关闭上传弹窗
         editorElements.uploadModal.classList.add('hidden');
 
         showToast('上传成功');
     } catch (error) {
+        hideLoading();  // 错误时也要隐藏
         console.error('上传失败:', error);
         alert('上传失败: ' + error.message);
     }
@@ -647,9 +662,8 @@ function renderEditorDeadline(deadlineAt) {
  */
 function openImageViewer(images, index) {
     const viewer = document.getElementById('editorImageViewer');
-    const img = viewer?.querySelector('.viewer-image');
 
-    if (!viewer || !img) {
+    if (!viewer) {
         // 如果查看器元素不存在，在新标签页打开
         if (images && images[index]) {
             window.open(images[index].url, '_blank');
@@ -657,59 +671,14 @@ function openImageViewer(images, index) {
         return;
     }
 
-    editorImageViewerState.images = images;
-    editorImageViewerState.currentIndex = index;
-
-    img.src = images[index].url;
-    viewer.classList.remove('hidden');
-}
-
-/**
- * 关闭图片查看器
- */
-function editorCloseImageViewer() {
-    const viewer = document.getElementById('editorImageViewer');
-    if (viewer) {
-        viewer.classList.add('hidden');
-    }
-}
-
-/**
- * 上一张图片
- */
-function editorPrevImage() {
-    const { images, currentIndex } = editorImageViewerState;
-    if (images.length === 0) return;
-
-    const newIndex = (currentIndex - 1 + images.length) % images.length;
-    editorImageViewerState.currentIndex = newIndex;
-
-    const img = document.querySelector('#editorImageViewer .viewer-image');
-    if (img) {
-        img.src = images[newIndex].url;
-    }
-}
-
-/**
- * 下一张图片
- */
-function editorNextImage() {
-    const { images, currentIndex } = editorImageViewerState;
-    if (images.length === 0) return;
-
-    const newIndex = (currentIndex + 1) % images.length;
-    editorImageViewerState.currentIndex = newIndex;
-
-    const img = document.querySelector('#editorImageViewer .viewer-image');
-    if (img) {
-        img.src = images[newIndex].url;
-    }
+    editorImageViewer.setImages(images);
+    editorImageViewer.open(index);
 }
 
 // 导出图片查看器函数到全局（供 HTML onclick 调用）
-window.editorCloseImageViewer = editorCloseImageViewer;
-window.editorPrevImage = editorPrevImage;
-window.editorNextImage = editorNextImage;
+window.editorCloseImageViewer = () => editorImageViewer.close();
+window.editorPrevImage = () => editorImageViewer.prev();
+window.editorNextImage = () => editorImageViewer.next();
 
 /**
  * 删除图片

@@ -56,6 +56,12 @@ async function loadInitialData() {
     registryState.loading = true;
 
     try {
+        // 先加载科目列表
+        if (!state.subjects || state.subjects.length === 0) {
+            state.subjects = await api.getSubjects();
+        }
+
+        // 再加载批次数据
         const config = getResponsiveConfig();
         const batches = await api.getBatches({
             limit: config.initial,

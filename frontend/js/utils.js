@@ -226,3 +226,126 @@ function showToast(message, duration = 2000) {
 
 // 导出到全局
 window.showToast = showToast;
+
+// ==================== Loading 组件 ====================
+
+/**
+ * 显示 Loading
+ * @param {string} message - 提示消息
+ */
+function showLoading(message = '加载中...') {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        const textEl = loading.querySelector('.loading-text');
+        if (textEl) textEl.textContent = message;
+        loading.classList.remove('hidden');
+    }
+}
+
+/**
+ * 隐藏 Loading
+ */
+function hideLoading() {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.classList.add('hidden');
+    }
+}
+
+// 导出到全局
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+
+// ==================== 图片查看器组件 ====================
+
+/**
+ * 创建图片查看器组件
+ * @param {object} options - 配置选项
+ * @param {string} options.viewerId - 查看器容器 ID（默认 'imageViewer'）
+ * @param {Array} options.images - 图片数组
+ * @param {number} options.initialIndex - 初始索引（默认 0）
+ * @param {Function} options.getUrl - 获取图片 URL 的函数 (item) => string
+ * @param {boolean} options.loop - 是否循环切换（默认 false）
+ * @returns {object} 查看器控制接口 { open, close, next, prev, setImages }
+ */
+function createImageViewer(options) {
+    const {
+        viewerId = 'imageViewer',
+        images = [],
+        initialIndex = 0,
+        getUrl = (item) => item.url || item.file_path,
+        loop = false
+    } = options;
+
+    let currentIndex = initialIndex;
+    let viewerImages = [...images];
+
+    // 获取 DOM 元素
+    const viewer = document.getElementById(viewerId);
+    const img = viewer?.querySelector('.viewer-image');
+    const prevBtn = viewer?.querySelector('.viewer-prev');
+    const nextBtn = viewer?.querySelector('.viewer-next');
+
+    // 更新按钮状态（边界时禁用）
+    function updateButtonState() {
+        if (!loop) {
+            prevBtn?.toggleAttribute('disabled', currentIndex <= 0);
+            nextBtn?.toggleAttribute('disabled', currentIndex >= viewerImages.length - 1);
+        }
+    }
+
+    // 更新图片显示
+    function updateImage() {
+        if (img && viewerImages[currentIndex]) {
+            img.src = getUrl(viewerImages[currentIndex]);
+            updateButtonState();
+        }
+    }
+
+    // 上一张
+    function prev() {
+        if (loop) {
+            currentIndex = (currentIndex - 1 + viewerImages.length) % viewerImages.length;
+        } else if (currentIndex > 0) {
+            currentIndex--;
+            updateImage();
+        }
+    }
+
+    // 下一张
+    function next() {
+        if (loop) {
+            currentIndex = (currentIndex + 1) % viewerImages.length;
+        } else if (currentIndex < viewerImages.length - 1) {
+            currentIndex++;
+            updateImage();
+        }
+    }
+
+    // 打开查看器
+    function open(index = 0) {
+        currentIndex = index;
+        updateImage();
+        viewer?.classList.remove('hidden');
+    }
+
+    // 关闭查看器
+    function close() {
+        viewer?.classList.add('hidden');
+    }
+
+    // 设置新图片列表
+    function setImages(newImages) {
+        viewerImages = [...newImages];
+        currentIndex = 0;
+    }
+
+    // 绑定按钮事件
+    if (prevBtn) prevBtn.onclick = prev;
+    if (nextBtn) nextBtn.onclick = next;
+
+    return { open, close, next, prev, setImages };
+}
+
+// 导出到全局
+window.createImageViewer = createImageViewer;
