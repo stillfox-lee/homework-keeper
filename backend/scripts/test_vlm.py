@@ -76,7 +76,6 @@ async def main():
         print_separator()
 
         print(f"📷 作业图片: {vlm_output.homeworkFileName}")
-        print(f"📚 参考资料图片: {vlm_output.referenceFileName}")
 
         print_separator()
         print(f"📝 作业项数量: {len(vlm_output.homework_items)}")

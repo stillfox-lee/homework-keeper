@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日作业 - 墨宝</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/frontend/css/common.css">
+    <link rel="stylesheet" href="/frontend/css/today.css">
+</head>
+<body class="bg-amber-50 min-h-screen">
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast hidden">加载中...</div>
+
+    <!-- 主容器 -->
+    <div id="app">
+        <!-- 顶部导航 -->
+        <div class="top-nav">
+            <a href="/registry.html" class="back-button">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </a>
+            <h1 id="batchName" class="page-title">加载中...</h1>
+            <div class="w-8"></div>
+        </div>
+
+        <!-- 大图区域 -->
+        <div id="imagesContainer" class="images-container hidden">
+            <div id="imagesList" class="images-list">
+                <!-- 图片由 JS 填充 -->
+            </div>
+        </div>
+
+        <!-- Deadline 倒计时 -->
+        <div id="deadlineContainer" class="deadline-container hidden">
+            <!-- 由 JS 填充 -->
+        </div>
+
+        <!-- 作业列表 -->
+        <div class="items-container">
+            <div id="todoItems" class="items-list">
+                <!-- 未完成作业 -->
+            </div>
+            <div id="doneSection" class="done-section hidden">
+                <div class="done-divider">
+                    <span>已完成</span>
+                </div>
+                <div id="doneItems" class="items-list">
+                    <!-- 已完成作业 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片查看器弹窗 -->
+    <div id="imageViewer" class="image-viewer hidden">
+        <button id="imageViewerClose" class="viewer-close">&times;</button>
+        <button id="imageViewerPrev" class="viewer-nav viewer-prev">&#10094;</button>
+        <img id="imageViewerImg" class="viewer-image" src="" alt="">
+        <button id="imageViewerNext" class="viewer-nav viewer-next">&#10095;</button>
+    </div>
+
+    <!-- 完成确认弹窗 -->
+    <div id="completionModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <h2 class="modal-title">太棒了！</h2>
+            <p class="modal-text">所有作业都完成了，要标记这个作业本为「已完成」吗？</p>
+            <div class="modal-actions">
+                <button id="completionCancel" class="modal-btn modal-btn-secondary">稍后再说</button>
+                <button id="completionConfirm" class="modal-btn modal-btn-primary">已完成</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/frontend/js/api.js"></script>
+    <script src="/frontend/js/utils.js"></script>
+    <script src="/frontend/js/today.js"></script>
+    <script>
+        // 页面初始化：从 URL 获取 batchId
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const batchId = params.get('id');
+
+            if (!batchId) {
+                // 没有 batchId，跳转回登记簿
+                window.location.href = '/registry.html';
+                return;
+            }
+
+            // 加载今日作业数据
+            if (typeof loadTodayPage === 'function') {
+                await loadTodayPage(batchId);
+            }
+        });
+    </script>
+</body>
+</html>

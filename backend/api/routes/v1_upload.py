@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import HomeworkBatch, BatchImage, HomeworkItem, Subject
-from backend.services.vlm_service import get_vlm_service, generate_random_color
+from backend.services.vlm_service import get_vlm_service
 from backend.services.homework_service import get_homework_service
 from backend.api.deps import get_current_child
 from backend.schemas import (
@@ -25,7 +25,6 @@ from backend.schemas import (
     VLMParsedHomeworkItem,
     ParsedHomeworkItem,
     VLMImageClassification,
-    SubjectResponse,
 )
 from backend.config import settings
 
@@ -51,15 +50,18 @@ def _subject_response_dict(subject: Subject) -> dict:
 
 def _item_to_response(item: HomeworkItem, subject: Subject) -> HomeworkItemResponse:
     """作业项转响应"""
-    response = HomeworkItemResponse.model_validate(item)
-    response.subject = _subject_response_dict(subject)  # type: ignore
-    return response
-
-
-def _index_to_sort_order(index_str: str) -> int:
-    """将图片索引字符串转换为 sort_order"""
-    # index_str 格式: "index0", "index1", etc.
-    return int(index_str.replace("index", ""))
+    return HomeworkItemResponse(
+        id=item.id,
+        batch_id=item.batch_id,
+        source_image_id=item.source_image_id,
+        subject=_subject_response_dict(subject),
+        text=item.text,
+        key_concept=item.key_concept,
+        status=item.status,
+        started_at=item.started_at,
+        finished_at=item.finished_at,
+        created_at=item.created_at,
+    )
 
 
 @router.post("/draft", response_model=VLMUploadDraftResponse)
@@ -135,62 +137,34 @@ async def upload_draft_batch_vlm(
     subject_dicts = [{"id": s.id, "name": s.name} for s in subjects]
     subject_map = {s.id: s for s in subjects}
 
-    # 调用 VLM 服务
+    # 获取原始上传文件名列表，用于 VLM 显示和结果匹配
+    original_filenames = [img.file_name for img in uploaded_images]
+
+    # 调用 VLM 服务，传递原始文件名
     vlm_result = await vlm_service.parse_homework_images(
         image_paths=image_paths,
-        subjects=subject_dicts
+        subjects=subject_dicts,
+        original_filenames=original_filenames
     )
-
-    # 新创建的科目列表（用于返回给前端）
-    new_subjects_response = []
 
     # 构建 VLM 解析结果
     parsed_result = None
     if vlm_result.success:
-        # 处理新科目：创建到数据库
-        new_subject_map = {}  # 科目名称 -> 科目 ID
-        for subject_name in vlm_result.new_subject_names:
-            # 检查是否已存在（可能并发创建）
-            existing = db.query(Subject).filter(Subject.name == subject_name).first()
-            if not existing:
-                # 创建新科目
-                new_subject = Subject(
-                    name=subject_name,
-                    color=generate_random_color(),
-                    sort_order=len(subjects) + len(new_subjects_response) + 1,
-                )
-                db.add(new_subject)
-                db.flush()
-
-                subject_map[new_subject.id] = new_subject
-                subjects.append(new_subject)
-                subject_dicts.append({"id": new_subject.id, "name": new_subject.name})
-
-                new_subjects_response.append(SubjectResponse(
-                    id=new_subject.id,
-                    name=new_subject.name,
-                    color=new_subject.color,
-                    sort_order=new_subject.sort_order,
-                ))
-
-                new_subject_map[subject_name] = new_subject.id
-            else:
-                # 已存在，使用现有科目
-                new_subject_map[subject_name] = existing.id
-
         # 更新图片分类
         image_map = {img.sort_order: img for img in uploaded_images}
+        # 构建文件名到 sort_order 的映射
+        file_name_to_order = {img.file_name: img.sort_order for img in uploaded_images}
 
-        for idx_str in vlm_result.homework_images:
-            idx = _index_to_sort_order(idx_str)
-            if idx in image_map:
+        for file_name in vlm_result.homework_images:
+            if file_name in file_name_to_order:
+                idx = file_name_to_order[file_name]
                 image_map[idx].image_type = "homework"
                 # 更新 raw_ocr_text 为 JSON 格式
                 image_map[idx].raw_ocr_text = json.dumps({"type": "homework"}, ensure_ascii=False)
 
-        for idx_str in vlm_result.reference_images:
-            idx = _index_to_sort_order(idx_str)
-            if idx in image_map:
+        for file_name in vlm_result.reference_images:
+            if file_name in file_name_to_order:
+                idx = file_name_to_order[file_name]
                 image_map[idx].image_type = "reference"
                 image_map[idx].raw_ocr_text = json.dumps({"type": "reference"}, ensure_ascii=False)
 
@@ -199,27 +173,39 @@ async def upload_draft_batch_vlm(
             img.ocr_status = "success"
 
         # 构建 homework_images 和 reference_images 的 sort_order 列表
-        homework_sort_orders = [_index_to_sort_order(idx) for idx in vlm_result.homework_images]
-        reference_sort_orders = [_index_to_sort_order(idx) for idx in vlm_result.reference_images]
+        homework_sort_orders = [
+            file_name_to_order[name] for name in vlm_result.homework_images if name in file_name_to_order
+        ]
+        reference_sort_orders = [
+            file_name_to_order[name] for name in vlm_result.reference_images if name in file_name_to_order
+        ]
+
+        # 构建文件名到 BatchImage 的映射（用于查找 source_image_id）
+        file_name_to_image = {img.file_name: img for img in uploaded_images}
 
         # 转换作业项为 ParsedHomeworkItem
         parsed_items = []
         for item in vlm_result.homework_items:
             subject_id = item.get("subject_id")
-            subject_name = item.get("subject", "")
 
-            # 如果是新科目（subject_id == -1），使用新创建的科目 ID
-            if subject_id == -1 and subject_name in new_subject_map:
-                subject_id = new_subject_map[subject_name]
+            # 跳过未匹配科目的作业项（subject_id == -1）
+            if subject_id == -1:
+                continue
 
             # 查找科目
-            subject = subject_map.get(subject_id, subjects[0])
+            subject = subject_map.get(subject_id)
             if subject:
+                # 根据 homeworkFileName 查找 source_image_id
+                homework_file_name = item.get("homeworkFileName")
+                source_image = file_name_to_image.get(homework_file_name) if homework_file_name else None
+                source_image_id = source_image.id if source_image else None
+
                 parsed_items.append(ParsedHomeworkItem(
                     subject_id=subject.id,
                     subject_name=subject.name,
                     text=item.get("text", ""),
-                    key_concept=None
+                    key_concept=None,
+                    source_image_id=source_image_id
                 ))
 
         # 转换原始 VLM 返回
@@ -234,8 +220,25 @@ async def upload_draft_batch_vlm(
             ),
             items=parsed_items,
             raw_items=raw_items,
-            new_subjects=new_subjects_response,
+            unmatched_subjects=vlm_result.new_subject_names,  # 未匹配的科目名
             error=None
+        )
+
+        # 保存 VLM 解析结果到批次（用于草稿恢复）
+        batch.vlm_parse_result = json.dumps(parsed_result.model_dump(), ensure_ascii=False)
+    else:
+        # VLM 解析失败，保存错误信息
+        from backend.schemas import VLMParseResult
+        batch.vlm_parse_result = json.dumps(
+            VLMParseResult(
+                success=False,
+                classification=None,
+                items=[],
+                raw_items=[],
+                unmatched_subjects=[],
+                error=vlm_result.error or "VLM 解析失败"
+            ).model_dump(),
+            ensure_ascii=False
         )
 
     db.commit()
@@ -245,7 +248,12 @@ async def upload_draft_batch_vlm(
 
     return VLMUploadDraftResponse(
         success=True,
-        batch=DraftBatchInfo(id=batch.id, name=batch.name, status=batch.status),
+        batch=DraftBatchInfo(
+            id=batch.id,
+            name=batch.name,
+            status=batch.status,
+            deadline_at=batch.deadline_at
+        ),
         batch_id=batch.id,
         images=image_responses,
         parsed=parsed_result,
@@ -319,22 +327,54 @@ async def confirm_draft_batch_vlm(
     if data.deadline_at:
         batch.deadline_at = data.deadline_at
 
-    # 激活批次
+    # 先保存作业项到数据库（此时批次仍是 draft）
+    db.commit()
+
+    # 先查询数据用于构建响应（确保在激活批次前构建响应成功）
+    items = db.query(HomeworkItem).filter(HomeworkItem.batch_id == batch_id).all()
+    images = db.query(BatchImage).filter(BatchImage.batch_id == batch_id).all()
+    subjects = db.query(Subject).all()
+    subject_map = {s.id: s for s in subjects}
+
+    # 先构建响应，确保数据格式正确
+    response = HomeworkBatchResponse(
+        id=batch.id,
+        child_id=batch.child_id,
+        name=batch.name,
+        status=batch.status,
+        deadline_at=batch.deadline_at,
+        completed_at=batch.completed_at,
+        created_at=batch.created_at,
+        updated_at=batch.updated_at,
+        items=[_item_to_response(item, subject_map[item.subject_id]) for item in items],
+        images=[_batch_image_to_response(img) for img in images],
+        vlm_parse_result=None
+    )
+
+    # 响应构建成功后，激活批次（draft → active）
     homework_service = get_homework_service()
     homework_service.activate_batch(db, batch_id)
+
+    # 清空 VLM 解析结果（已确认，不再需要）
+    batch.vlm_parse_result = None
 
     db.commit()
     db.refresh(batch)
 
-    # 构建响应
-    items = db.query(HomeworkItem).filter(HomeworkItem.batch_id == batch_id).all()
-    images = db.query(BatchImage).filter(BatchImage.batch_id == batch_id).all()
-
-    response = HomeworkBatchResponse.model_validate(batch)
-    response.items = [
-        _item_to_response(item, subject_map[item.subject_id]) for item in items
-    ]
-    response.images = [_batch_image_to_response(img) for img in images]
+    # 重新构建响应以反映最新的批次状态
+    response = HomeworkBatchResponse(
+        id=batch.id,
+        child_id=batch.child_id,
+        name=batch.name,
+        status=batch.status,
+        deadline_at=batch.deadline_at,
+        completed_at=batch.completed_at,
+        created_at=batch.created_at,
+        updated_at=batch.updated_at,
+        items=[_item_to_response(item, subject_map[item.subject_id]) for item in items],
+        images=[_batch_image_to_response(img) for img in images],
+        vlm_parse_result=None
+    )
     return response
 
 
@@ -409,3 +449,65 @@ async def update_image_type(
     db.commit()
 
     return _batch_image_to_response(image)
+
+
+@router.delete("/{batch_id}/images/{image_id}")
+async def delete_batch_image(
+    batch_id: int,
+    image_id: int,
+    child=Depends(get_current_child),
+    db: Session = Depends(get_db),
+):
+    """
+    删除批次图片
+
+    Args:
+        batch_id: 批次ID
+        image_id: 图片ID
+
+    Returns:
+        删除成功消息
+    """
+    # 验证批次所有权
+    batch = (
+        db.query(HomeworkBatch)
+        .filter(HomeworkBatch.id == batch_id, HomeworkBatch.child_id == child.id)
+        .first()
+    )
+
+    if not batch:
+        raise HTTPException(status_code=404, detail="批次不存在")
+
+    # 查询图片
+    image = (
+        db.query(BatchImage)
+        .filter(BatchImage.id == image_id, BatchImage.batch_id == batch_id)
+        .first()
+    )
+
+    if not image:
+        raise HTTPException(status_code=404, detail="图片不存在")
+
+    # 删除文件
+    file_path = settings.UPLOAD_DIR / image.file_path
+    if file_path.exists():
+        try:
+            file_path.unlink()
+        except Exception as e:
+            # 文件删除失败不影响数据库记录删除
+            print(f"Warning: Failed to delete file {file_path}: {e}")
+
+    # 删除关联的作业项（如果该图片是 source_image）
+    related_items = (
+        db.query(HomeworkItem)
+        .filter(HomeworkItem.source_image_id == image_id)
+        .all()
+    )
+    for item in related_items:
+        db.delete(item)
+
+    # 删除数据库记录
+    db.delete(image)
+    db.commit()
+
+    return {"message": "图片已删除"}

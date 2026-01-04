@@ -35,28 +35,21 @@ def generate_random_color() -> str:
 # ==================== VLM 输出格式定义 ====================
 
 
-class VLMHomeworkItem(BaseModel):
-    """VLM 解析的作业项"""
+class HomeworkItem(BaseModel):
+    """从 homework 图片中提取的作业项"""
 
     subject: str = Field(..., description="科目名称")
     text: str = Field(..., description="作业文本内容")
-    homeworkFileName: str = Field(..., description="作业图片文件名")
-    has_reference: bool = Field(..., description="是否有参考资料")
-    referenceFileName: str = Field(
-        default="", description="参考资料文件名，无则为空字符串"
-    )
+    homeworkFileName: str = Field(..., description="homeworkList图片文件名")
 
 
 class VLMOutput(BaseModel):
     """VLM 输出格式"""
 
-    referenceFileName: List[str] = Field(
-        ..., description="reference 类型图片的文件名列表，如 ['picxxx', 'img222']"
-    )
     homeworkFileName: List[str] = Field(
-        ..., description="homework 类型图片的文件名列表，如 ['image0', 'image1']"
+        ..., description="homeworkList 类型图片的文件名列表，如 ['image0', 'image1']"
     )
-    homework_items: List[VLMHomeworkItem] = Field(..., description="作业项目列表")
+    homework_items: List[HomeworkItem] = Field(..., description="作业清单列表")
 
 
 # ==================== VLM 服务 ====================
@@ -107,52 +100,42 @@ class VLMService:
 
         # 使用模型生成示例
         example = VLMOutput(
-            referenceFileName=["image1"],
             homeworkFileName=["pic1", "h1"],
             homework_items=[
-                VLMHomeworkItem(
+                HomeworkItem(
                     subject="数学",
                     text="完成练习册第10页",
                     homeworkFileName="pic1",
-                    has_reference=False,
-                    referenceFileName="",
                 ),
-                VLMHomeworkItem(
+                HomeworkItem(
                     subject="数学",
                     text="完成课本第20页练习题",
                     homeworkFileName="pic1",
-                    has_reference=True,
-                    referenceFileName="image1",
                 ),
-                VLMHomeworkItem(
+                HomeworkItem(
                     subject="语文",
                     text="背诵古诗",
                     homeworkFileName="h1",
-                    has_reference=False,
-                    referenceFileName="",
                 ),
             ],
         )
         json_example = example.model_dump_json(ensure_ascii=False, indent=2)
 
         return f"""你的任务是帮助学生从教师提供的一组图片列表中提取作业相关的信息。
-图片信息说明：
-- 图片分为两类：
-    1. 作业清单照片。类型定义为 homework，这种图片是黑板板书的照片，包含老师布置的作业内容。
-    2. 参考资料照片。类型定义为 reference。这种图片是与作业清单相关的参考资料。
 
 
 你需要按照下面的要求处理图片：
-1. 先识别图片中的文字内容，然后为图片分类为两类：homework 或者 reference。
-2. 对每张 homework 的图片，识别其中的内容，提取为 HomeworkItem 信息。注意理解作业图片内容，将相关的参考资料图片与之关联(referenceFileName)。
+1. 找到作业任务图片，具体规则如下：
+    - 如果图片内容是非常清楚的作业任务，则分类为 homeworkList。
+    - 典型的 homeworkList 图片内容如：“语文：1.xxx 2.xxx 数学：1.xxx 2.xxx”
+2. 对每张 homeworkList 的图片，识别其中的内容，提取为 HomeworkItem 信息。具体规则如下：
+    - HomeworkItem 是作业独立单元，每个 HomeworkItem 都是可以独立完成的作业任务。
+    - homeworkList 图片中可能同一个 HomeworkItem 会出现换行的情况，你需要根据语义的相关性来判断是否为同一个 HomeworkItem。
+    - 你应该尽可能将一张 homeworkList 图片中的多个作业任务拆解为多个 HomeworkItem。
+    - HomeWorkItem.text 中必须包含图片中的完整文字内容。
+    - HomeWorkItem.homeworkFileName 必须是这个作业来源的 homeworkList 图片文件名。
 3. 构建数据对象，输出 JSON 格式数据。
 
-关于 HomeworkItem 拆解的注意事项：
-- HomeworkItem 是作业独立单元，每个 HomeworkItem 都是可以独立完成的作业任务。
-- 需要注意，有时候图片中可能同一个 HomeworkItem 会出现换行的情况，你需要根据语义的相关性来判断是否为同一个 HomeworkItem。
-- 你应该尽可能将一张 homework 图片中的多个作业任务拆解为多个 HomeworkItem。
-- HomeWorkItem.homeworkFileName 必须是这个作业来源的图片文件名。
-- 一张 reference 图片，可以对应到一个 HomeworkItem，需要基于 reference 图片的内容来判断应该关联到哪个 HomeworkItem。
 
 现有科目列表：{subjects_str}
 
@@ -176,6 +159,9 @@ JSON Schema：
 你得到的一组图片中，按照顺序依次文件名为：{", ".join(ordered_image_names)}。你必须使用这些文件名填充 JSON中的相关字段。
 
 注意：只输出 JSON，不要添加任何其他说明文字。"""
+
+    # TODO: test case:
+    # 多张 HomeworkList 的图片试试看能不能解析
 
     def _safe_parse_json(self, text: str) -> Optional[Dict]:
         """安全解析 JSON，处理常见格式问题"""
@@ -208,14 +194,15 @@ JSON Schema：
         return None
 
     async def call_llm(
-        self, image_paths: List[str], subject_names: List[str]
+        self, image_paths: List[str], subject_names: List[str], display_filenames: List[str] = None
     ) -> VLMOutput:
         """
         核心方法：调用 LLM API 并返回解析结果
 
         Args:
-            image_paths: 图片路径列表
+            image_paths: 图片路径列表（实际存储路径）
             subject_names: 科目名称列表（纯字符串）
+            display_filenames: 传递给 VLM 的显示文件名列表（原始上传文件名），默认使用 image_paths 的文件名
 
         Returns:
             VLMOutput Pydantic 对象
@@ -225,6 +212,9 @@ JSON Schema：
         """
         if not image_paths:
             raise ValueError("没有提供图片")
+
+        if display_filenames and len(display_filenames) != len(image_paths):
+            raise ValueError("display_filenames 长度必须与 image_paths 相同")
 
         logger.info(
             "[VLM] 开始解析作业图片",
@@ -236,8 +226,8 @@ JSON Schema：
 
         client = self._ensure_client()
 
-        # 提取图片文件名（不包含路径，只保留文件名）
-        image_names = [Path(p).name for p in image_paths]
+        # 使用显示文件名（原始上传文件名），如果没有提供则从路径提取
+        image_names = display_filenames if display_filenames else [Path(p).name for p in image_paths]
         logger.debug(f"image_names: {image_names}")
 
         # 构建消息内容
@@ -289,7 +279,6 @@ JSON Schema：
                     "[VLM] 解析成功",
                     extra={
                         "homework_images": len(result.homeworkFileName),
-                        "reference_images": len(result.referenceFileName),
                         "homework_items": len(result.homework_items),
                     },
                 )
@@ -312,7 +301,7 @@ JSON Schema：
                     raise ValueError(f"VLM 调用失败: {last_error}")
 
     async def parse_homework_images(
-        self, image_paths: List[str], subjects: List[Dict]
+        self, image_paths: List[str], subjects: List[Dict], original_filenames: List[str] = None
     ) -> "VLMResult":
         """
         解析作业图片 - 委托给业务逻辑层
@@ -322,6 +311,7 @@ JSON Schema：
         Args:
             image_paths: 图片路径列表
             subjects: 科目列表 [{"id": 1, "name": "数学"}, ...]
+            original_filenames: 原始上传文件名列表（与 image_paths 一一对应）
 
         Returns:
             VLMResult 包含图片分类和作业项
@@ -331,7 +321,7 @@ JSON Schema：
         )
 
         parser = get_homework_parser_service()
-        return await parser.parse_homework_images(image_paths, subjects)
+        return await parser.parse_homework_images(image_paths, subjects, original_filenames)
 
 
 # 全局单例

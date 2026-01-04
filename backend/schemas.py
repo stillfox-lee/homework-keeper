@@ -76,6 +76,7 @@ class HomeworkBatchResponse(BaseModel):
     updated_at: datetime
     items: List[HomeworkItemResponse] = []
     images: List[BatchImageResponse] = []
+    vlm_parse_result: Optional[dict] = None  # draft 状态时返回 VLM 解析结果
 
     class Config:
         from_attributes = True
@@ -103,6 +104,12 @@ class HomeworkItemStatusUpdate(BaseModel):
     status: str  # todo/doing/done
 
 
+class HomeworkItemStatusResponse(BaseModel):
+    """作业项状态更新响应"""
+    item: HomeworkItemResponse
+    batch_ready_to_complete: bool = False  # 批次是否已准备好完成（全部 done 但还未 completed）
+
+
 class BatchCreate(BaseModel):
     """创建批次请求"""
     name: Optional[str] = None  # 为空时系统自动生成
@@ -126,6 +133,7 @@ class DraftBatchInfo(BaseModel):
     id: int
     name: str
     status: str
+    deadline_at: Optional[datetime] = None  # 预计算的截止时间
 
 
 class UploadDraftResponse(BaseModel):
@@ -144,6 +152,7 @@ class ParsedHomeworkItem(BaseModel):
     subject_name: str  # 科目名称（用于显示）
     text: str  # 作业描述
     key_concept: Optional[str] = None
+    source_image_id: Optional[int] = None  # 来源图片 ID（VLM 解析时根据 homeworkFileName 映射）
 
 
 class LLMParseResponse(BaseModel):
@@ -184,9 +193,7 @@ class VLMParsedHomeworkItem(BaseModel):
     """VLM 解析出的作业项（原始格式）"""
     subject: str  # 科目名称
     text: str  # 作业描述
-    imageFileName: str  # 图片索引，如 "index0"
-    has_reference: bool  # 是否有参考资料
-    referenceFileName: str = ""  # 参考资料索引，如 "index2"
+    homeworkFileName: str  # 作业图片文件名
 
 
 class VLMImageClassification(BaseModel):
@@ -201,7 +208,7 @@ class VLMParseResult(BaseModel):
     classification: VLMImageClassification
     items: List[ParsedHomeworkItem]  # 映射后的作业项
     raw_items: List[VLMParsedHomeworkItem]  # 原始 VLM 返回
-    new_subjects: List[SubjectResponse] = []  # 新创建的科目
+    unmatched_subjects: List[str] = []  # 未匹配的科目名（需要用户处理）
     error: Optional[str] = None
 
 
@@ -219,3 +226,21 @@ class VLMDraftConfirmRequest(BaseModel):
     items: List[HomeworkItemCreate]
     image_classification: Optional[VLMImageClassification] = None  # 用户可修改
     deadline_at: Optional[datetime] = None
+
+
+# ==================== 批次更新相关 ====================
+
+class HomeworkItemUpdateOrCreate(BaseModel):
+    """更新或创建作业项（用于编辑模式）"""
+    id: Optional[int] = None  # 有ID则更新，无ID则创建
+    subject_id: int
+    text: str
+    key_concept: Optional[str] = None
+    source_image_id: Optional[int] = None
+
+
+class BatchUpdate(BaseModel):
+    """更新批次请求"""
+    name: Optional[str] = None
+    deadline_at: Optional[datetime] = None
+    items: Optional[List[HomeworkItemUpdateOrCreate]] = None  # 完全替换作业项列表

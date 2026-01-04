@@ -2,11 +2,13 @@
 作业解析服务 - 业务逻辑层
 负责科目映射、新科目检测、结果组装
 """
+
 from typing import List, Dict, Optional, NamedTuple, Set
+from pathlib import Path
 
 from loguru import logger
 
-from backend.services.vlm_service import VLMService, VLMOutput, VLMHomeworkItem
+from backend.services.vlm_service import VLMService, VLMOutput, HomeworkItem
 
 
 class VLMResult(NamedTuple):
@@ -30,6 +32,7 @@ class HomeworkParserService:
         """获取 VLM 服务实例"""
         if self._vlm_service is None:
             from backend.services.vlm_service import get_vlm_service
+
             self._vlm_service = get_vlm_service()
         return self._vlm_service
 
@@ -68,6 +71,8 @@ class HomeworkParserService:
         self,
         vlm_output: VLMOutput,
         subjects: List[Dict],
+        image_paths: List[str],
+        original_filenames: List[str] = None,
     ) -> VLMResult:
         """
         将 VLMOutput 映射为 VLMResult
@@ -75,12 +80,19 @@ class HomeworkParserService:
         Args:
             vlm_output: LLM 返回的原始输出
             subjects: 现有科目列表
+            image_paths: 所有图片路径列表
+            original_filenames: 原始上传文件名列表（与 image_paths 一一对应）
 
         Returns:
             VLMResult 包含科目 ID 映射和新科目信息
         """
         homework_items = []
         new_subject_names: Set[str] = set()
+
+        # 使用原始文件名列表计算 reference_images
+        all_image_names = original_filenames if original_filenames else [Path(p).name for p in image_paths]
+        # reference_images = 所有图片 - homework图片
+        reference_images = list(set(all_image_names) - set(vlm_output.homeworkFileName))
 
         for item in vlm_output.homework_items:
             subject_name = item.subject.strip()
@@ -96,9 +108,7 @@ class HomeworkParserService:
                 {
                     "subject": matched_name,
                     "text": item.text,
-                    "imageFileName": item.imageFileName,
-                    "has_reference": item.has_reference,
-                    "referenceFileName": item.referenceFileName,
+                    "homeworkFileName": item.homeworkFileName,
                     "subject_id": subject_id,  # -1 表示新科目
                 }
             )
@@ -106,7 +116,7 @@ class HomeworkParserService:
         result = VLMResult(
             success=True,
             homework_images=vlm_output.homeworkFileName,
-            reference_images=vlm_output.referenceFileName,
+            reference_images=reference_images,
             homework_items=homework_items,
             new_subject_names=list(new_subject_names),
             error=None,
@@ -129,6 +139,7 @@ class HomeworkParserService:
         self,
         image_paths: List[str],
         subjects: List[Dict],
+        original_filenames: List[str] = None,
     ) -> VLMResult:
         """
         解析作业图片 - 完整流程
@@ -136,8 +147,9 @@ class HomeworkParserService:
         这是原有的 parse_homework_images 方法，迁移到业务逻辑层
 
         Args:
-            image_paths: 图片路径列表
+            image_paths: 图片路径列表（实际存储路径）
             subjects: 科目列表 [{"id": 1, "name": "数学"}, ...]
+            original_filenames: 原始上传文件名列表（与 image_paths 一一对应）
 
         Returns:
             VLMResult 包含图片分类和作业项（带科目 ID）
@@ -152,6 +164,9 @@ class HomeworkParserService:
                 error="没有提供图片",
             )
 
+        if original_filenames and len(original_filenames) != len(image_paths):
+            raise ValueError("original_filenames 长度必须与 image_paths 相同")
+
         logger.info(
             f"[Parser] 开始解析作业图片，现有科目: {[s['name'] for s in subjects]}"
         )
@@ -159,10 +174,10 @@ class HomeworkParserService:
         # 提取科目名称
         subject_names = [s["name"] for s in subjects]
 
-        # 调用核心 LLM 层
+        # 调用核心 LLM 层，传递原始文件名用于显示
         vlm_service = self._get_vlm_service()
         try:
-            vlm_output = await vlm_service.call_llm(image_paths, subject_names)
+            vlm_output = await vlm_service.call_llm(image_paths, subject_names, original_filenames)
         except Exception as e:
             logger.error(f"[Parser] VLM 调用失败: {e}")
             return VLMResult(
@@ -173,8 +188,8 @@ class HomeworkParserService:
                 error=f"VLM 调用失败: {str(e)}",
             )
 
-        # 映射结果
-        return self._map_vlm_output_to_result(vlm_output, subjects)
+        # 映射结果，传递原始文件名用于计算 reference_images
+        return self._map_vlm_output_to_result(vlm_output, subjects, image_paths, original_filenames)
 
     async def call_llm_only(
         self,

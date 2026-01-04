@@ -68,6 +68,9 @@ class HomeworkBatch(Base):
     created_at = Column(DateTime, server_default=func.current_timestamp())
     updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
+    # VLM 解析结果（JSON 格式存储，用于草稿恢复）
+    vlm_parse_result = Column(Text, nullable=True)
+
 
 class BatchImage(Base):
     """批次图片表"""

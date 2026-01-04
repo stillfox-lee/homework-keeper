@@ -8,7 +8,7 @@ from datetime import datetime
 from backend.database import get_db
 from backend.models import HomeworkItem, HomeworkBatch, Subject
 from backend.api.deps import get_current_child
-from backend.schemas import HomeworkItemResponse, HomeworkItemUpdate, HomeworkItemStatusUpdate
+from backend.schemas import HomeworkItemResponse, HomeworkItemUpdate, HomeworkItemStatusUpdate, HomeworkItemStatusResponse
 
 router = APIRouter(prefix="/api/items", tags=["items"])
 
@@ -25,9 +25,18 @@ def _subject_response_dict(subject: Subject) -> dict:
 
 def _item_to_response(item: HomeworkItem, subject: Subject) -> HomeworkItemResponse:
     """作业项转响应"""
-    response = HomeworkItemResponse.model_validate(item)
-    response.subject = _subject_response_dict(subject)  # type: ignore
-    return response
+    return HomeworkItemResponse(
+        id=item.id,
+        batch_id=item.batch_id,
+        source_image_id=item.source_image_id,
+        subject=_subject_response_dict(subject),
+        text=item.text,
+        key_concept=item.key_concept,
+        status=item.status,
+        started_at=item.started_at,
+        finished_at=item.finished_at,
+        created_at=item.created_at,
+    )
 
 
 @router.put("/{item_id}", response_model=HomeworkItemResponse)
@@ -39,7 +48,10 @@ async def update_item(
 ):
     """更新作业项"""
     # 通过 batch 验证所有权
-    item = db.query(HomeworkItem).join(HomeworkBatch).filter(
+    item = db.query(HomeworkItem).join(
+        HomeworkBatch,
+        HomeworkItem.batch_id == HomeworkBatch.id
+    ).filter(
         HomeworkItem.id == item_id,
         HomeworkBatch.child_id == child.id
     ).first()
@@ -55,7 +67,7 @@ async def update_item(
     if data.key_concept is not None:
         item.key_concept = data.key_concept
 
-    item.updated_at = datetime.utcnow()
+    item.updated_at = datetime.now()
     db.commit()
     db.refresh(item)
 
@@ -63,7 +75,7 @@ async def update_item(
     return _item_to_response(item, subject)
 
 
-@router.patch("/{item_id}/status", response_model=HomeworkItemResponse)
+@router.patch("/{item_id}/status", response_model=HomeworkItemStatusResponse)
 async def update_item_status(
     item_id: int,
     data: HomeworkItemStatusUpdate,
@@ -75,7 +87,10 @@ async def update_item_status(
         raise HTTPException(status_code=400, detail="无效的状态")
 
     # 通过 batch 验证所有权
-    item = db.query(HomeworkItem).join(HomeworkBatch).filter(
+    item = db.query(HomeworkItem).join(
+        HomeworkBatch,
+        HomeworkItem.batch_id == HomeworkBatch.id
+    ).filter(
         HomeworkItem.id == item_id,
         HomeworkBatch.child_id == child.id
     ).first()
@@ -84,13 +99,13 @@ async def update_item_status(
         raise HTTPException(status_code=404, detail="作业项不存在")
 
     item.status = data.status
-    item.updated_at = datetime.utcnow()
+    item.updated_at = datetime.now()
 
     # 状态转换时记录时间
     if data.status == "doing" and not item.started_at:
-        item.started_at = datetime.utcnow()
+        item.started_at = datetime.now()
     elif data.status == "done" and not item.finished_at:
-        item.finished_at = datetime.utcnow()
+        item.finished_at = datetime.now()
     elif data.status == "todo":
         item.started_at = None
         item.finished_at = None
@@ -98,15 +113,21 @@ async def update_item_status(
     db.commit()
     db.refresh(item)
 
-    # 检查并更新批次完成状态
+    # 检查批次是否已准备好完成（全部 done 但还未 completed）
     from backend.services.homework_service import get_homework_service
     homework_service = get_homework_service()
     batch = db.query(HomeworkBatch).filter(HomeworkBatch.id == item.batch_id).first()
-    if batch:
-        homework_service.update_batch_completion(db, batch)
+
+    batch_ready_to_complete = False
+    if batch and batch.status == 'active':
+        # 检查是否所有作业都已完成，但不自动更新批次状态
+        batch_ready_to_complete = homework_service.check_batch_completion(db, batch.id)
 
     subject = db.query(Subject).filter(Subject.id == item.subject_id).first()
-    return _item_to_response(item, subject)
+    return HomeworkItemStatusResponse(
+        item=_item_to_response(item, subject),
+        batch_ready_to_complete=batch_ready_to_complete
+    )
 
 
 @router.delete("/{item_id}")
@@ -117,7 +138,10 @@ async def delete_item(
 ):
     """删除作业项"""
     # 通过 batch 验证所有权
-    item = db.query(HomeworkItem).join(HomeworkBatch).filter(
+    item = db.query(HomeworkItem).join(
+        HomeworkBatch,
+        HomeworkItem.batch_id == HomeworkBatch.id
+    ).filter(
         HomeworkItem.id == item_id,
         HomeworkBatch.child_id == child.id
     ).first()

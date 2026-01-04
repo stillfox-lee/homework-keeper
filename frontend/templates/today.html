@@ -1,0 +1,43 @@
+<!-- 今日作业/详情页面模板 -->
+
+<div id="todayView" class="view hidden">
+    <!-- 顶部导航 -->
+    <div class="today-header">
+        <button id="todayBackBtn" class="today-back-btn">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        <h1 id="todayBatchName" class="today-header-title">作业详情</h1>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- 大图区域（横向滚动） -->
+    <div id="todayImages" class="scrolling-wrapper">
+        <!-- 图片由 JS 动态生成 -->
+    </div>
+
+    <!-- Deadline 倒计时 -->
+    <div id="todayDeadline" class="hidden">
+        <!-- 内容由 JS 动态生成 -->
+    </div>
+
+    <!-- 未完成作业 -->
+    <div class="today-items-section">
+        <div id="todayTodoItems">
+            <!-- 作业项由 JS 动态生成 -->
+        </div>
+    </div>
+
+    <!-- 已完成作业（带分隔线） -->
+    <div id="todayDoneSection" class="hidden">
+        <div class="today-section-divider">
+            <span>已完成</span>
+        </div>
+        <div class="today-items-section">
+            <div id="todayDoneItems">
+                <!-- 作业项由 JS 动态生成 -->
+            </div>
+        </div>
+    </div>
+</div>

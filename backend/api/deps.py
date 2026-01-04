@@ -8,6 +8,7 @@ from typing import Optional
 from backend.database import get_db
 from backend.models import Family, Child
 from backend.config import settings
+from backend.core.request import get_request_id as get_current_request_id
 
 
 async def get_current_family(
@@ -40,3 +41,22 @@ async def get_current_child(
         raise HTTPException(status_code=404, detail="未找到孩子信息")
 
     return child
+
+
+async def get_request_id() -> str:
+    """
+    获取当前请求的 request-id
+
+    可以在路由处理函数中通过依赖注入使用：
+
+    ```python
+    @router.get("/items")
+    async def get_items(request_id: str = Depends(get_request_id)):
+        # 使用 request_id 进行日志记录或其他操作
+        logger.info(f"Processing request {request_id}")
+    ```
+
+    Returns:
+        当前请求的 request-id
+    """
+    return get_current_request_id()

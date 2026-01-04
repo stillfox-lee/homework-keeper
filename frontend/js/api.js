@@ -7,20 +7,10 @@ const API_BASE = window.location.origin;
 // 通用请求处理
 async function handleResponse(response) {
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: '请求失败' }));
-        throw new Error(error.message || error.detail || '请求失败');
+        const error = await response.json().catch(() => ({ message: '网络出错了' }));
+        throw new Error(error.message || error.detail || '网络出错了');
     }
     return response.json();
-}
-
-// 显示提示
-function showToast(message, duration = 2000) {
-    const toast = document.getElementById('loadingToast');
-    toast.textContent = message;
-    toast.classList.remove('hidden');
-    setTimeout(() => {
-        toast.classList.add('hidden');
-    }, duration);
 }
 
 // API 对象
@@ -41,6 +31,30 @@ const api = {
     // 获取批次详情
     async getBatch(batchId) {
         const response = await fetch(`${API_BASE}/api/batches/${batchId}`);
+        return handleResponse(response);
+    },
+
+    // 获取批次作业项
+    async getBatchItems(batchId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}/items${query ? '?' + query : ''}`);
+        return handleResponse(response);
+    },
+
+    // 确认完成批次
+    async completeBatch(batchId) {
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}/complete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return handleResponse(response);
+    },
+
+    // 删除批次
+    async deleteBatch(batchId) {
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
+            method: 'DELETE'
+        });
         return handleResponse(response);
     },
 
@@ -107,9 +121,9 @@ const api = {
         return handleResponse(response);
     },
 
-    // 获取批次图片
+    // 获取批次图片（使用 V1 API）
     async getBatchImages(batchId) {
-        const response = await fetch(`${API_BASE}/api/upload/${batchId}/images`);
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`);
         return handleResponse(response);
     },
 
@@ -171,5 +185,36 @@ const api = {
             body: formData
         });
         return handleResponse(response);
+    },
+
+    // 向批次添加单个作业项
+    async addBatchItem(batchId, item) {
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}/items`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+        return handleResponse(response);
+    },
+
+    // 更新批次
+    async updateBatch(batchId, data) {
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return handleResponse(response);
+    },
+
+    // V1: 删除批次图片
+    async v1DeleteImage(batchId, imageId) {
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images/${imageId}`, {
+            method: 'DELETE'
+        });
+        return handleResponse(response);
     }
 };
+
+// 导出到全局
+window.api = api;

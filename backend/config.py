@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """应用配置"""
 
     # 应用配置
-    APP_NAME: str = "作业管家"
+    APP_NAME: str = "墨宝"
     DEBUG: bool = True
 
     # 数据库配置

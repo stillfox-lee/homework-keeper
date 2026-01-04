@@ -1,0 +1,211 @@
+/**
+ * 公共样式
+ */
+
+/* Toast 提示 */
+.toast {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1c1917;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    z-index: 50;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.toast.hidden {
+    display: none;
+}
+
+/* 顶部导航栏 */
+.top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    color: #57534e;
+    transition: all 0.2s;
+}
+
+.back-button:hover {
+    background-color: #f5f5f4;
+    color: #1c1917;
+}
+
+.page-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1c1917;
+    text-align: center;
+}
+
+/* 页面标题栏 */
+.page-header {
+    background-color: white;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.page-header .page-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1c1917;
+    text-align: center;
+}
+
+/* 图片查看器 */
+.image-viewer {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewer-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+    font-size: 2rem;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.viewer-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.viewer-nav:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.viewer-prev {
+    left: 1rem;
+}
+
+.viewer-next {
+    right: 1rem;
+}
+
+.viewer-image {
+    max-width: 100%;
+    max-height: 100vh;
+    object-fit: contain;
+}
+
+/* 模态框 */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    max-width: 20rem;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1c1917;
+    margin-bottom: 0.5rem;
+}
+
+.modal-text {
+    color: #57534e;
+    margin-bottom: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-btn-primary {
+    background-color: #f59e0b;
+    color: white;
+    border: none;
+}
+
+.modal-btn-primary:hover {
+    background-color: #d97706;
+}
+
+.modal-btn-secondary {
+    background-color: #f5f5f4;
+    color: #57534e;
+    border: none;
+}
+
+.modal-btn-secondary:hover {
+    background-color: #e7e5e4;
+}
+
+/* 隐藏类 */
+.hidden {
+    display: none !important;
+}

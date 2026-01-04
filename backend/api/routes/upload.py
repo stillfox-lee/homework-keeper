@@ -47,9 +47,18 @@ def _subject_response_dict(subject: Subject) -> dict:
 
 def _item_to_response(item: HomeworkItem, subject: Subject) -> HomeworkItemResponse:
     """作业项转响应"""
-    response = HomeworkItemResponse.model_validate(item)
-    response.subject = _subject_response_dict(subject)  # type: ignore
-    return response
+    return HomeworkItemResponse(
+        id=item.id,
+        batch_id=item.batch_id,
+        source_image_id=item.source_image_id,
+        subject=_subject_response_dict(subject),
+        text=item.text,
+        key_concept=item.key_concept,
+        status=item.status,
+        started_at=item.started_at,
+        finished_at=item.finished_at,
+        created_at=item.created_at,
+    )
 
 
 @router.post("/draft", response_model=UploadDraftResponse)
@@ -259,11 +268,19 @@ async def confirm_draft_batch(
     items = db.query(HomeworkItem).filter(HomeworkItem.batch_id == batch_id).all()
     images = db.query(BatchImage).filter(BatchImage.batch_id == batch_id).all()
 
-    response = HomeworkBatchResponse.model_validate(batch)
-    response.items = [
-        _item_to_response(item, subject_map[item.subject_id]) for item in items
-    ]
-    response.images = [_batch_image_to_response(img) for img in images]
+    response = HomeworkBatchResponse(
+        id=batch.id,
+        child_id=batch.child_id,
+        name=batch.name,
+        status=batch.status,
+        deadline_at=batch.deadline_at,
+        completed_at=batch.completed_at,
+        created_at=batch.created_at,
+        updated_at=batch.updated_at,
+        items=[_item_to_response(item, subject_map[item.subject_id]) for item in items],
+        images=[_batch_image_to_response(img) for img in images],
+        vlm_parse_result=None
+    )
     return response
 
 

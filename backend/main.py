@@ -9,12 +9,22 @@ from pathlib import Path
 
 from backend.config import settings
 from backend.api.routes import batch, items, subject, analytics, family, v1_upload
+from backend.middleware import RequestIdMiddleware
+from backend.core.request import configure_logger_with_request_id
+
+# 配置日志（包含 request-id）
+configure_logger_with_request_id()
+
+from loguru import logger
 
 # 创建 FastAPI 应用
 app = FastAPI(
     title=settings.APP_NAME,
     debug=settings.DEBUG
 )
+
+# 注册 Request-ID 中间件（必须在 CORS 之前）
+app.add_middleware(RequestIdMiddleware)
 
 # 配置 CORS
 app.add_middleware(
@@ -45,6 +55,23 @@ async def index():
     return FileResponse("frontend/index.html")
 
 
+# HTML 页面路由（新增页面时在此添加）
+@app.get("/today.html")
+async def today_page():
+    return FileResponse("frontend/today.html")
+
+
+@app.get("/registry.html")
+async def registry_page():
+    return FileResponse("frontend/registry.html")
+
+
+# 未来新增页面，只需在此添加类似路由即可：
+# @app.get("/editor.html")
+# async def editor_page():
+#     return FileResponse("frontend/editor.html")
+
+
 @app.get("/family/{token}")
 async def family_index(token: str):
     """家庭访问入口 - 返回前端页面（token 由前端使用）"""
@@ -56,6 +83,7 @@ async def startup_event():
     """应用启动时的初始化"""
     from backend.database import init_db
     init_db()
+    logger.info("Application started successfully")
 
 
 if __name__ == "__main__":
