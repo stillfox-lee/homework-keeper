@@ -33,7 +33,7 @@ async def get_daily_stats(
     """
     # 默认最近 7 天
     if not end_date:
-        end_date = datetime.now().date()
+        end_date = datetime.utcnow().date()
     else:
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 

@@ -1,9 +1,10 @@
 """
 作业批次管理服务
 """
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
+import pytz
 
 from backend.models import HomeworkBatch, BatchImage, HomeworkItem, Child, Subject
 from backend.services.holiday_service import get_holiday_service
@@ -19,7 +20,8 @@ class HomeworkService:
         规则：
         - 学期周中用日期命名（如"12月29日作业"）
         """
-        now = datetime.now()
+        local_tz = pytz.timezone('Asia/Shanghai')
+        now = datetime.now(timezone.utc).astimezone(local_tz)
         return f"{now.month}月{now.day}日作业"
 
     def calculate_deadline(self, base_date: Optional[datetime] = None) -> datetime:
@@ -32,30 +34,44 @@ class HomeworkService:
         - 周末/假期中 → 找到假期/周末结束后的第一天
 
         Args:
-            base_date: 基准日期，默认为当前时间
+            base_date: 基准日期（UTC 时间），默认为当前 UTC 时间
 
         Returns:
-            截止时间
+            截止时间（UTC 时间）
         """
+        local_tz = pytz.timezone('Asia/Shanghai')
+
         if base_date is None:
-            base_date = datetime.now()
+            base_date = datetime.now(timezone.utc)
+
+        # 确保 base_date 是带时区的 UTC 时间
+        if base_date.tzinfo is None:
+            base_date = base_date.replace(tzinfo=timezone.utc)
+
+        # 转换为本地时区进行日期计算
+        local_date = base_date.astimezone(local_tz)
 
         holiday_service = get_holiday_service()
 
-        # 从明天开始找第一个工作日
-        next_day = base_date + timedelta(days=1)
-        deadline_date = next_day.date()
+        # 使用 UTC 日期计算（避免跨时区导致的日期跳变问题）
+        # 例如：UTC 1月4日 16:10 = 东八区 1月5日 00:10
+        # 用户在东八区 1月4日晚上创建，deadline 应该是 1月5日（基于 UTC 日期的次日）
+        base_utc_date = base_date.date()
+        deadline_date = base_utc_date + timedelta(days=1)
 
-        # 如果明天不是工作日，继续往后找
+        # 如果次日不是工作日，继续往后找
         while not holiday_service.is_workday(deadline_date):
             deadline_date = deadline_date + timedelta(days=1)
             # 最多往后找30天，防止无限循环
-            if (deadline_date - next_day.date()).days > 30:
+            if (deadline_date - base_utc_date).days > 30:
                 break
 
-        # 转换为 datetime 并设置为 23:59
-        deadline = datetime.combine(deadline_date, datetime.min.time())
-        return deadline.replace(hour=23, minute=59, second=59)
+        # 组合为本地 datetime（23:59:59），然后转回 UTC 存储
+        local_deadline = local_tz.localize(
+            datetime.combine(deadline_date, datetime.min.time())
+        ).replace(hour=23, minute=59, second=59)
+
+        return local_deadline.astimezone(timezone.utc).replace(tzinfo=None)
 
     def create_draft_batch(
         self,
@@ -131,7 +147,7 @@ class HomeworkService:
         active_batch = self.get_active_batch(db, child_id)
         if active_batch:
             active_batch.status = 'completed'
-            active_batch.completed_at = datetime.now()
+            active_batch.completed_at = datetime.utcnow()
 
     def activate_batch(self, db: Session, batch_id: int) -> HomeworkBatch:
         """
@@ -163,7 +179,7 @@ class HomeworkService:
 
         # 激活当前批次
         batch.status = 'active'
-        batch.updated_at = datetime.now()
+        batch.updated_at = datetime.utcnow()
 
         db.flush()
         return batch
@@ -199,7 +215,7 @@ class HomeworkService:
         if self.check_batch_completion(db, batch.id):
             if batch.status != 'completed':
                 batch.status = 'completed'
-                batch.completed_at = datetime.now()
+                batch.completed_at = datetime.utcnow()
 
 
 # 全局单例

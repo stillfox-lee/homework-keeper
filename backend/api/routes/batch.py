@@ -288,7 +288,7 @@ async def update_batch_status(
         homework_service.activate_batch(db, batch_id)
     elif data.status == "completed":
         batch.status = "completed"
-        batch.completed_at = datetime.now()
+        batch.completed_at = datetime.utcnow()
     else:
         batch.status = data.status
 
@@ -357,7 +357,7 @@ async def complete_batch(
         raise HTTPException(status_code=400, detail="还有作业未完成")
 
     batch.status = "completed"
-    batch.completed_at = datetime.now()
+    batch.completed_at = datetime.utcnow()
     db.commit()
 
     return {"success": True}
@@ -448,7 +448,7 @@ async def update_batch(
                 db.add(new_item)
 
     # 更新时间戳
-    batch.updated_at = datetime.now()
+    batch.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(batch)
 

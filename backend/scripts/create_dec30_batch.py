@@ -15,8 +15,7 @@ def create_dec30_batch():
     """创建 12.30 号已完成批次"""
     engine = create_engine(DATABASE_URL)
 
-    # 获取当前时间
-    now = datetime.now()
+    # 创建测试数据日期（指定固定时间，避免时区问题）
     dec30_date = datetime(2024, 12, 30, 18, 0, 0)  # 12月30日 18:00
     completed_time = datetime(2024, 12, 30, 21, 30, 0)  # 当天 21:30 完成
 

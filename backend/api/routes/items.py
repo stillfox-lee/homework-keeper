@@ -67,7 +67,7 @@ async def update_item(
     if data.key_concept is not None:
         item.key_concept = data.key_concept
 
-    item.updated_at = datetime.now()
+    item.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(item)
 
@@ -99,13 +99,13 @@ async def update_item_status(
         raise HTTPException(status_code=404, detail="作业项不存在")
 
     item.status = data.status
-    item.updated_at = datetime.now()
+    item.updated_at = datetime.utcnow()
 
     # 状态转换时记录时间
     if data.status == "doing" and not item.started_at:
-        item.started_at = datetime.now()
+        item.started_at = datetime.utcnow()
     elif data.status == "done" and not item.finished_at:
-        item.finished_at = datetime.now()
+        item.finished_at = datetime.utcnow()
     elif data.status == "todo":
         item.started_at = None
         item.finished_at = None
