@@ -116,7 +116,11 @@ WantedBy=multi-user.target
 
 ### Nginx 配置
 
-配置文件位于 `/etc/nginx/sites-available/mobo`：
+配置文件位于 `/etc/nginx/sites-available/mobo`。
+
+#### 根路径部署
+
+默认部署在根路径，所有请求直接代理到后端：
 
 ```nginx
 server {
@@ -127,12 +131,11 @@ server {
 
     location /frontend/ {
         alias /path/to/homework-keeper/frontend/;
-        expires 7d;
+        try_files $uri $uri/ /frontend/index.html;
     }
 
     location /uploads/ {
         alias /path/to/homework-keeper/data/uploads/;
-        expires 30d;
     }
 
     location / {
@@ -147,6 +150,41 @@ server {
     }
 }
 ```
+
+#### 子路径部署
+
+部署在子路径（如 `/mobo/`），使用 `rewrite` 去掉前缀后代理：
+
+```nginx
+server {
+    listen 80;
+    server_name example.com;
+
+    client_max_body_size 10M;
+
+    # 所有 /mobo/ 的请求去掉前缀后代理到后端
+    # /mobo/api/batches → /api/batches
+    # /mobo/today.html → /today.html
+    location /mobo/ {
+        rewrite ^/mobo/(.*) /$1 break;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 300s;
+    }
+
+    # 处理不以 / 结尾的请求
+    location /mobo {
+        rewrite ^/mobo$ /mobo/ permanent;
+    }
+}
+```
+
+**架构原则**：业务代码始终假设根路径运行，子路径部署完全由 Nginx 的 `rewrite` 规则处理。
 
 ## 服务管理
 

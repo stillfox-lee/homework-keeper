@@ -473,24 +473,6 @@ check_nginx_conflicts() {
     return 0
 }
 
-# 更新前端配置文件
-update_frontend_config() {
-    local project_root="$1"
-    local sub_path="$2"
-
-    echo -e "${color_info}=== 更新前端配置 ===${color_reset}"
-
-    local config_file="$project_root/frontend/js/config.js"
-
-    cat > "$config_file" << EOF
-// 前端配置文件（由部署脚本自动生成）
-window.BASE_URL = '$sub_path';
-EOF
-
-    echo -e "${color_ok}前端配置已更新: BASE_URL = '$sub_path'${color_reset}"
-    echo
-}
-
 step_configure_nginx() {
     local project_root="$1"
 
@@ -547,10 +529,7 @@ server {
 }
 EOF
     else
-        # 子路径部署
-        local api_prefix="$SUB_PATH"
-        [[ "$api_prefix" != "/" ]] && api_prefix="$SUB_PATH/"
-
+        # 子路径部署 - 使用 rewrite 去掉前缀后代理到后端
         cat > "$NGINX_SITE" << EOF
 server {
     listen 80;
@@ -558,15 +537,12 @@ server {
 
     client_max_body_size 10M;
 
-    # 前端 - 子路径
-    location $SUB_PATH {
-        alias $project_root/frontend/;
-        try_files \$uri \$uri/ $SUB_PATH/index.html;
-    }
-
-    # API 代理
-    location ${api_prefix}api {
-        proxy_pass http://127.0.0.1:8000/api;
+    # 子路径 - 所有请求都通过 rewrite 去掉前缀
+    # /mobo/api/xxx → /api/xxx
+    # /mobo/today.html → /today.html
+    location $SUB_PATH/ {
+        rewrite ^$SUB_PATH/(.*) /\$1 break;
+        proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -576,9 +552,9 @@ server {
         proxy_read_timeout 300s;
     }
 
-    # 上传文件
-    location ${api_prefix}uploads {
-        alias $project_root/data/uploads/;
+    # 子路径根（处理不以 / 结尾的请求）
+    location $SUB_PATH {
+        rewrite ^$SUB_PATH\$ $SUB_PATH/ permanent;
     }
 }
 EOF
@@ -598,8 +574,6 @@ EOF
         return 1
     fi
 
-    # 更新前端配置
-    update_frontend_config "$project_root" "$SUB_PATH"
     echo
 }
 

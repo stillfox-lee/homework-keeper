@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作业登记簿 - 墨宝</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/registry.css">
+    <link rel="stylesheet" href="/frontend/css/common.css">
+    <link rel="stylesheet" href="/frontend/css/registry.css">
 </head>
 <body class="bg-amber-50 min-h-screen">
     <!-- Toast 提示 -->
@@ -43,18 +43,9 @@
         </div>
     </div>
 
-    <script>
-        // 动态设置脚本基础路径（支持子路径部署）
-        const SCRIPT_BASE = (function() {
-            const path = window.location.pathname;
-            const match = path.match(/^(\/[^/]+)\//);
-            return match ? match[1] : '';
-        })();
-    </script>
-    <script src="js/config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/registry.js"></script>
+    <script src="/frontend/js/api.js"></script>
+    <script src="/frontend/js/utils.js"></script>
+    <script src="/frontend/js/registry.js"></script>
     <script>
         // 页面初始化
         document.addEventListener('DOMContentLoaded', async () => {
