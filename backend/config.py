@@ -3,11 +3,14 @@
 """
 
 from pathlib import Path
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """应用配置"""
+
+    model_config = ConfigDict(extra="ignore", env_file=".env")
 
     # 应用配置
     APP_NAME: str = "墨宝"
@@ -28,9 +31,6 @@ class Settings(BaseSettings):
     VLM_MODEL: str = "glm-4.6v-flash"  # 免费多模态模型
     VLM_TIMEOUT: int = 60
     VLM_MAX_RETRIES: int = 3
-
-    class Config:
-        env_file = ".env"
 
 
 settings = Settings()
