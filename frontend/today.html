@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>今日作业 - 墨宝</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/frontend/css/common.css">
-    <link rel="stylesheet" href="/frontend/css/today.css">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/today.css">
 </head>
 <body class="bg-amber-50 min-h-screen">
     <!-- Toast 提示 -->
@@ -26,7 +26,7 @@
     <div id="app">
         <!-- 顶部导航 -->
         <div class="top-nav">
-            <a href="/registry.html" class="back-button">
+            <a href="registry.html" class="back-button">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -84,9 +84,18 @@
         </div>
     </div>
 
-    <script src="/frontend/js/api.js"></script>
-    <script src="/frontend/js/utils.js"></script>
-    <script src="/frontend/js/today.js"></script>
+    <script>
+        // 动态设置脚本基础路径（支持子路径部署）
+        const SCRIPT_BASE = (function() {
+            const path = window.location.pathname;
+            const match = path.match(/^(\/[^/]+)\//);
+            return match ? match[1] : '';
+        })();
+    </script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/today.js"></script>
     <script>
         // 页面初始化：从 URL 获取 batchId
         document.addEventListener('DOMContentLoaded', async () => {
@@ -95,7 +104,8 @@
 
             if (!batchId) {
                 // 没有 batchId，跳转回登记簿
-                window.location.href = '/registry.html';
+                const base = SCRIPT_BASE || '';
+                window.location.href = `${base}/registry.html`;
                 return;
             }
 

@@ -43,8 +43,18 @@
         <p id="statusText">正在进入...</p>
         <p id="errorText" class="error" style="display: none;"></p>
     </div>
-    <script src="/frontend/js/utils.js"></script>
-    <script src="/frontend/js/api.js"></script>
+    <script>
+        // 动态设置脚本基础路径（支持子路径部署）
+        const SCRIPT_BASE = (function() {
+            const path = window.location.pathname;
+            // 如果在子路径下（如 /mobo/），提取基础路径
+            const match = path.match(/^(\/[^/]+)\//);
+            return match ? match[1] : '';
+        })();
+    </script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
     <script>
         const statusText = document.getElementById('statusText');
         const errorText = document.getElementById('errorText');
@@ -59,10 +69,11 @@
             // 获取最近的 active 批次并重定向
             api.getCurrentBatch()
                 .then(batch => {
+                    const base = SCRIPT_BASE || '';
                     if (batch) {
-                        window.location.href = `/today.html?id=${batch.id}`;
+                        window.location.href = `${base}/today.html?id=${batch.id}`;
                     } else {
-                        window.location.href = '/registry.html';
+                        window.location.href = `${base}/registry.html`;
                     }
                 })
                 .catch(err => {

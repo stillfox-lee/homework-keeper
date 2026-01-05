@@ -2,7 +2,15 @@
  * API 调用封装
  */
 
-const API_BASE = window.location.origin;
+// API 基础路径（从 config.js 加载，默认为空字符串表示根路径）
+const API_BASE = window.BASE_URL || '';
+
+// 构建 API URL（自动处理斜杠）
+function buildUrl(path) {
+    const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+    const p = path.startsWith('/') ? path : '/' + path;
+    return base + p;
+}
 
 // 获取带认证的请求头
 function getAuthHeaders() {
@@ -31,7 +39,7 @@ async function handleResponse(response) {
 const api = {
     // 获取当前批次
     async getCurrentBatch() {
-        const response = await fetch(`${API_BASE}/api/batches/current`, {
+        const response = await fetch(buildUrl('/api/batches/current'), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -40,7 +48,7 @@ const api = {
     // 获取批次列表
     async getBatches(params = {}) {
         const query = new URLSearchParams(params).toString();
-        const response = await fetch(`${API_BASE}/api/batches?${query}`, {
+        const response = await fetch(buildUrl(`/api/batches?${query}`), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -48,7 +56,7 @@ const api = {
 
     // 获取批次详情
     async getBatch(batchId) {
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
+        const response = await fetch(buildUrl(`/api/batches/${batchId}`), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -57,7 +65,7 @@ const api = {
     // 获取批次作业项
     async getBatchItems(batchId, params = {}) {
         const query = new URLSearchParams(params).toString();
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}/items${query ? '?' + query : ''}`, {
+        const response = await fetch(buildUrl(`/api/batches/${batchId}/items${query ? '?' + query : ''}`), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -65,7 +73,7 @@ const api = {
 
     // 确认完成批次
     async completeBatch(batchId) {
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}/complete`, {
+        const response = await fetch(buildUrl(`/api/batches/${batchId}/complete`), {
             method: 'POST',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' }
         });
@@ -74,7 +82,7 @@ const api = {
 
     // 删除批次
     async deleteBatch(batchId) {
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
+        const response = await fetch(buildUrl(`/api/batches/${batchId}`), {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -88,7 +96,7 @@ const api = {
             formData.append('files', file);
         });
 
-        const response = await fetch(`${API_BASE}/api/upload/draft`, {
+        const response = await fetch(buildUrl('/api/upload/draft'), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData
@@ -101,7 +109,7 @@ const api = {
         const formData = new FormData();
         formData.append('batch_id', batchId);
 
-        const response = await fetch(`${API_BASE}/api/upload/parse`, {
+        const response = await fetch(buildUrl('/api/upload/parse'), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData
@@ -111,7 +119,7 @@ const api = {
 
     // 确认批次
     async confirmBatch(batchId, items, deadlineAt) {
-        const response = await fetch(`${API_BASE}/api/upload/${batchId}/confirm`, {
+        const response = await fetch(buildUrl(`/api/upload/${batchId}/confirm`), {
             method: 'POST',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -124,7 +132,7 @@ const api = {
 
     // 更新作业项状态
     async updateItemStatus(itemId, status) {
-        const response = await fetch(`${API_BASE}/api/items/${itemId}/status`, {
+        const response = await fetch(buildUrl(`/api/items/${itemId}/status`), {
             method: 'PATCH',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
@@ -134,7 +142,7 @@ const api = {
 
     // 删除作业项
     async deleteItem(itemId) {
-        const response = await fetch(`${API_BASE}/api/items/${itemId}`, {
+        const response = await fetch(buildUrl(`/api/items/${itemId}`), {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -143,7 +151,7 @@ const api = {
 
     // 获取科目列表
     async getSubjects() {
-        const response = await fetch(`${API_BASE}/api/subjects`, {
+        const response = await fetch(buildUrl('/api/subjects'), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -151,7 +159,7 @@ const api = {
 
     // 获取批次图片（使用 V1 API）
     async getBatchImages(batchId) {
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`, {
+        const response = await fetch(buildUrl(`/api/v1/upload/${batchId}/images`), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -162,7 +170,7 @@ const api = {
         const formData = new FormData();
         formData.append('image_type', imageType);
 
-        const response = await fetch(`${API_BASE}/api/upload/${batchId}/images/${imageId}/type`, {
+        const response = await fetch(buildUrl(`/api/upload/${batchId}/images/${imageId}/type`), {
             method: 'PATCH',
             headers: getAuthHeaders(),
             body: formData
@@ -179,7 +187,7 @@ const api = {
             formData.append('files', file);
         });
 
-        const response = await fetch(`${API_BASE}/api/v1/upload/draft`, {
+        const response = await fetch(buildUrl('/api/v1/upload/draft'), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData
@@ -189,7 +197,7 @@ const api = {
 
     // V1: 确认批次（支持图片分类）
     async v1ConfirmBatch(batchId, items, imageClassification, deadlineAt) {
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/confirm`, {
+        const response = await fetch(buildUrl(`/api/v1/upload/${batchId}/confirm`), {
             method: 'POST',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -203,7 +211,7 @@ const api = {
 
     // V1: 获取批次图片
     async v1GetBatchImages(batchId) {
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`, {
+        const response = await fetch(buildUrl(`/api/v1/upload/${batchId}/images`), {
             headers: getAuthHeaders()
         });
         return handleResponse(response);
@@ -214,7 +222,7 @@ const api = {
         const formData = new FormData();
         formData.append('image_type', imageType);
 
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images/${imageId}/type`, {
+        const response = await fetch(buildUrl(`/api/v1/upload/${batchId}/images/${imageId}/type`), {
             method: 'PATCH',
             headers: getAuthHeaders(),
             body: formData
@@ -224,7 +232,7 @@ const api = {
 
     // 向批次添加单个作业项
     async addBatchItem(batchId, item) {
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}/items`, {
+        const response = await fetch(buildUrl(`/api/batches/${batchId}/items`), {
             method: 'POST',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
@@ -234,7 +242,7 @@ const api = {
 
     // 更新批次
     async updateBatch(batchId, data) {
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
+        const response = await fetch(buildUrl(`/api/batches/${batchId}`), {
             method: 'PUT',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -244,7 +252,7 @@ const api = {
 
     // V1: 删除批次图片
     async v1DeleteImage(batchId, imageId) {
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images/${imageId}`, {
+        const response = await fetch(buildUrl(`/api/v1/upload/${batchId}/images/${imageId}`), {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
