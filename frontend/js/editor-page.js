@@ -389,7 +389,7 @@ async function handleSave() {
         return;
     }
 
-    const deadlineAt = editorElements.deadlineInput.value || null;
+    const deadlineAt = window.datetimeLocalToUtc(editorElements.deadlineInput.value) || null;
 
     try {
         if (editorState.mode === 'new') {

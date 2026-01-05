@@ -4,9 +4,23 @@
 
 const API_BASE = window.location.origin;
 
+// 获取带认证的请求头
+function getAuthHeaders() {
+    const token = window.getCurrentToken ? window.getCurrentToken() : null;
+    const headers = {};
+    if (token) {
+        headers['X-Access-Token'] = token;
+    }
+    return headers;
+}
+
 // 通用请求处理
 async function handleResponse(response) {
     if (!response.ok) {
+        // 401 未授权
+        if (response.status === 401) {
+            throw new Error('请使用正确的链接访问（需要 token 参数）');
+        }
         const error = await response.json().catch(() => ({ message: '网络出错了' }));
         throw new Error(error.message || error.detail || '网络出错了');
     }
@@ -17,27 +31,35 @@ async function handleResponse(response) {
 const api = {
     // 获取当前批次
     async getCurrentBatch() {
-        const response = await fetch(`${API_BASE}/api/batches/current`);
+        const response = await fetch(`${API_BASE}/api/batches/current`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
     // 获取批次列表
     async getBatches(params = {}) {
         const query = new URLSearchParams(params).toString();
-        const response = await fetch(`${API_BASE}/api/batches?${query}`);
+        const response = await fetch(`${API_BASE}/api/batches?${query}`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
     // 获取批次详情
     async getBatch(batchId) {
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}`);
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
     // 获取批次作业项
     async getBatchItems(batchId, params = {}) {
         const query = new URLSearchParams(params).toString();
-        const response = await fetch(`${API_BASE}/api/batches/${batchId}/items${query ? '?' + query : ''}`);
+        const response = await fetch(`${API_BASE}/api/batches/${batchId}/items${query ? '?' + query : ''}`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
@@ -45,7 +67,7 @@ const api = {
     async completeBatch(batchId) {
         const response = await fetch(`${API_BASE}/api/batches/${batchId}/complete`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' }
         });
         return handleResponse(response);
     },
@@ -53,7 +75,8 @@ const api = {
     // 删除批次
     async deleteBatch(batchId) {
         const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
         return handleResponse(response);
     },
@@ -67,6 +90,7 @@ const api = {
 
         const response = await fetch(`${API_BASE}/api/upload/draft`, {
             method: 'POST',
+            headers: getAuthHeaders(),
             body: formData
         });
         return handleResponse(response);
@@ -79,6 +103,7 @@ const api = {
 
         const response = await fetch(`${API_BASE}/api/upload/parse`, {
             method: 'POST',
+            headers: getAuthHeaders(),
             body: formData
         });
         return handleResponse(response);
@@ -88,7 +113,7 @@ const api = {
     async confirmBatch(batchId, items, deadlineAt) {
         const response = await fetch(`${API_BASE}/api/upload/${batchId}/confirm`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 items: items,
                 deadline_at: deadlineAt
@@ -101,7 +126,7 @@ const api = {
     async updateItemStatus(itemId, status) {
         const response = await fetch(`${API_BASE}/api/items/${itemId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
         });
         return handleResponse(response);
@@ -110,20 +135,25 @@ const api = {
     // 删除作业项
     async deleteItem(itemId) {
         const response = await fetch(`${API_BASE}/api/items/${itemId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
         return handleResponse(response);
     },
 
     // 获取科目列表
     async getSubjects() {
-        const response = await fetch(`${API_BASE}/api/subjects`);
+        const response = await fetch(`${API_BASE}/api/subjects`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
     // 获取批次图片（使用 V1 API）
     async getBatchImages(batchId) {
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`);
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
@@ -134,6 +164,7 @@ const api = {
 
         const response = await fetch(`${API_BASE}/api/upload/${batchId}/images/${imageId}/type`, {
             method: 'PATCH',
+            headers: getAuthHeaders(),
             body: formData
         });
         return handleResponse(response);
@@ -150,6 +181,7 @@ const api = {
 
         const response = await fetch(`${API_BASE}/api/v1/upload/draft`, {
             method: 'POST',
+            headers: getAuthHeaders(),
             body: formData
         });
         return handleResponse(response);
@@ -159,7 +191,7 @@ const api = {
     async v1ConfirmBatch(batchId, items, imageClassification, deadlineAt) {
         const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/confirm`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 items: items,
                 image_classification: imageClassification,
@@ -171,7 +203,9 @@ const api = {
 
     // V1: 获取批次图片
     async v1GetBatchImages(batchId) {
-        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`);
+        const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images`, {
+            headers: getAuthHeaders()
+        });
         return handleResponse(response);
     },
 
@@ -182,6 +216,7 @@ const api = {
 
         const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images/${imageId}/type`, {
             method: 'PATCH',
+            headers: getAuthHeaders(),
             body: formData
         });
         return handleResponse(response);
@@ -191,7 +226,7 @@ const api = {
     async addBatchItem(batchId, item) {
         const response = await fetch(`${API_BASE}/api/batches/${batchId}/items`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
         });
         return handleResponse(response);
@@ -201,7 +236,7 @@ const api = {
     async updateBatch(batchId, data) {
         const response = await fetch(`${API_BASE}/api/batches/${batchId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         return handleResponse(response);
@@ -210,7 +245,8 @@ const api = {
     // V1: 删除批次图片
     async v1DeleteImage(batchId, imageId) {
         const response = await fetch(`${API_BASE}/api/v1/upload/${batchId}/images/${imageId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
         return handleResponse(response);
     }

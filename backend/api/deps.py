@@ -7,7 +7,6 @@ from typing import Optional
 
 from backend.database import get_db
 from backend.models import Family, Child
-from backend.config import settings
 from backend.core.request import get_request_id as get_current_request_id
 
 
@@ -18,13 +17,12 @@ async def get_current_family(
     """
     获取当前家庭
 
-    优先级：
-    1. Header 中的 X-Access-Token
-    2. 默认令牌（本地开发）
+    从 Header 中的 X-Access-Token 获取认证信息
     """
-    token = x_access_token or settings.DEFAULT_FAMILY_TOKEN
+    if not x_access_token:
+        raise HTTPException(status_code=401, detail="缺少访问令牌")
 
-    family = db.query(Family).filter(Family.access_token == token).first()
+    family = db.query(Family).filter(Family.access_token == x_access_token).first()
     if not family:
         raise HTTPException(status_code=401, detail="无效的访问令牌")
 

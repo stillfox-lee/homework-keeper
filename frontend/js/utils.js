@@ -47,6 +47,17 @@ function utcToDatetimeLocal(utcString) {
 }
 
 /**
+ * 将 datetime-local 输入框的值转换为 UTC ISO 字符串
+ * @param {string|null} localString - datetime-local 格式（如 "2026-01-06T23:59"）
+ * @returns {string|null} UTC ISO 格式（如 "2026-01-06T15:59:00Z"）或 null
+ */
+function datetimeLocalToUtc(localString) {
+    if (!localString) return null;
+    const date = new Date(localString);
+    return date.toISOString();
+}
+
+/**
  * 格式化日期（相对时间）
  * @param {string} dateString - ISO 日期字符串
  * @returns {string} 格式化后的日期
@@ -365,4 +376,77 @@ function createImageViewer(options) {
 
 // 导出到全局
 window.utcToDatetimeLocal = utcToDatetimeLocal;
+window.datetimeLocalToUtc = datetimeLocalToUtc;
 window.createImageViewer = createImageViewer;
+
+// ==================== Token 认证 ====================
+
+const TOKEN_KEY = 'access_token';
+
+/**
+ * 从 URL 参数获取 token
+ * @returns {string|null} token 或 null
+ */
+function getTokenFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+}
+
+/**
+ * 保存 token 到 localStorage
+ * @param {string} token - 访问令牌
+ */
+function saveToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+}
+
+/**
+ * 从 localStorage 获取 token
+ * @returns {string|null} token 或 null
+ */
+function getSavedToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+/**
+ * 清除 token
+ */
+function clearToken() {
+    localStorage.removeItem(TOKEN_KEY);
+}
+
+/**
+ * 获取当前 token
+ * 优先从 URL 参数，其次从 localStorage
+ * @returns {string|null} token 或 null
+ */
+function getCurrentToken() {
+    // URL 参数优先（支持切换家庭）
+    const urlToken = getTokenFromUrl();
+    if (urlToken) {
+        // 保存到 localStorage
+        saveToken(urlToken);
+        // 清除 URL 中的 token 参数（保持地址栏简洁）
+        const url = new URL(window.location.href);
+        url.searchParams.delete('token');
+        window.history.replaceState({}, '', url.toString());
+        return urlToken;
+    }
+    return getSavedToken();
+}
+
+/**
+ * 检查是否有有效的 token
+ * @returns {boolean} 是否已认证
+ */
+function hasValidToken() {
+    return !!getCurrentToken();
+}
+
+// 导出到全局
+window.getTokenFromUrl = getTokenFromUrl;
+window.saveToken = saveToken;
+window.getSavedToken = getSavedToken;
+window.clearToken = clearToken;
+window.getCurrentToken = getCurrentToken;
+window.hasValidToken = hasValidToken;

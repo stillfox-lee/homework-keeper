@@ -342,8 +342,8 @@ const editorView = {
             return;
         }
 
-        // 收集截止时间 - 直接发送 datetime-local 格式，后端 Pydantic 会自动解析
-        const deadlineAt = editorElements.deadlineInput.value || null;
+        // 收集截止时间 - 转换为 UTC 后发送
+        const deadlineAt = window.datetimeLocalToUtc(editorElements.deadlineInput.value) || null;
 
         try {
             if (editorState.mode === 'new') {
