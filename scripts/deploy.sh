@@ -7,7 +7,9 @@ set -e
 # 配置变量
 # ============================================================================
 APP_NAME="mobo"
-NGINX_SITE="/etc/nginx/sites-available/mobo"
+# Nginx 配置路径（根据系统类型自动检测）
+NGINX_SITE=""
+NGINX_STYLE=""
 SYSTEMD_SERVICE="/etc/systemd/system/mobo.service"
 
 # 部署配置（全局变量）
@@ -299,9 +301,9 @@ EOF
 
     # 更新 CORS_ORIGINS
     if [[ -n "$DOMAIN" && "$DOMAIN" != "localhost" ]]; then
-        cors_value="http://$DOMAIN"
+        cors_value="http://$DOMAIN,https://$DOMAIN"
         if [[ -n "$SUB_PATH" ]]; then
-            cors_value="http://$DOMAIN$SUB_PATH"
+            cors_value="http://$DOMAIN$SUB_PATH,https://$DOMAIN$SUB_PATH"
         fi
         if grep -q "^CORS_ORIGINS=" "$project_root/.env"; then
             sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=$cors_value|" "$project_root/.env"
@@ -478,6 +480,23 @@ step_configure_nginx() {
 
     echo -e "${color_info}=== 配置 Nginx ===${color_reset}"
 
+    # 检测 Nginx 配置方式
+    if [[ -d "/etc/nginx/sites-available" ]]; then
+        NGINX_STYLE="debian"
+        NGINX_SITE="/etc/nginx/sites-available/mobo"
+        NGINX_ENABLED="/etc/nginx/sites-enabled/mobo"
+        echo -e "${color_info}检测到 Debian/Ubuntu 风格 Nginx 配置${color_reset}"
+    elif [[ -d "/etc/nginx/conf.d" ]]; then
+        NGINX_STYLE="rhel"
+        NGINX_SITE="/etc/nginx/conf.d/mobo.conf"
+        NGINX_ENABLED=""
+        echo -e "${color_info}检测到 CentOS/RHEL 风格 Nginx 配置${color_reset}"
+    else
+        echo -e "${color_error}无法检测 Nginx 配置目录${color_reset}"
+        echo -e "请确认 Nginx 已正确安装"
+        return 1
+    fi
+
     # 从 .env 读取配置（如果全局变量为空）
     if [[ -z "$DOMAIN" || -z "$SUB_PATH" ]]; then
         if [[ -f "$project_root/.env" ]]; then
@@ -560,10 +579,14 @@ server {
 EOF
     fi
 
-    # 启用站点
-    if [[ ! -L "/etc/nginx/sites-enabled/mobo" ]]; then
-        ln -sf "$NGINX_SITE" "/etc/nginx/sites-enabled/mobo"
+    # 启用站点（仅 Debian 风格需要符号链接）
+    if [[ "$NGINX_STYLE" == "debian" ]]; then
+        if [[ ! -L "$NGINX_ENABLED" ]]; then
+            ln -sf "$NGINX_SITE" "$NGINX_ENABLED"
+            echo -e "${color_info}创建符号链接: $NGINX_ENABLED${color_reset}"
+        fi
     fi
+    # RHEL 风格不需要符号链接，配置文件直接在 conf.d/ 中生效
 
     # 测试配置
     if nginx -t 2>&1 | grep -q "successful"; then

@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = Path("./data/uploads")
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
 
-    # CORS
-    CORS_ORIGINS: list = ["http://localhost:8000", "http://127.0.0.1:8000"]
+    # CORS（逗号分隔的字符串）
+    CORS_ORIGINS: str = "http://localhost:8000,http://127.0.0.1:8000"
 
     # VLM 配置（智谱 GLM-4V-Flash）
     ZHIPU_API_KEY: str = ""
