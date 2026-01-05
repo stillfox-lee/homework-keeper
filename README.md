@@ -48,6 +48,18 @@ uv run python -m backend.scripts.test_vlm <图片路径>...
 
 打开浏览器访问：<http://localhost:8000>
 
+## 生产部署
+
+生产环境部署请参阅 [部署指南](docs/deploy.md)。
+
+快速部署：
+
+```bash
+git clone <repo-url> homework-keeper
+cd homework-keeper
+sudo ./scripts/deploy.sh
+```
+
 ## 项目结构
 
 ```
