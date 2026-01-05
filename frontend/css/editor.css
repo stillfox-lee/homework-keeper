@@ -1,8 +1,17 @@
 /* ============================================
-   编辑器弹窗样式
+   编辑器页面样式
    ============================================ */
 
-/* 编辑器弹窗 - 全屏覆盖 */
+/* 编辑器页面容器 */
+#editorContainer {
+    min-height: 100vh;
+    background-color: #FFFBF5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 兼容旧弹窗样式 */
 #editorModal {
     position: fixed;
     inset: 0;
@@ -462,6 +471,10 @@
     animation: editorFadeIn 0.2s ease-out;
 }
 
+#editorContainer {
+    animation: editorFadeIn 0.2s ease-out;
+}
+
 @keyframes uploadModalFadeIn {
     from {
         opacity: 0;
@@ -527,7 +540,7 @@
    图片操作按钮样式
    ============================================ */
 
-/* 图片类型徽章 */
+/* 图片类型徽章 - 始终显示 */
 .editor-image-type-badge {
     position: absolute;
     bottom: 4px;
@@ -536,12 +549,6 @@
     font-size: 10px;
     border-radius: 4px;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-}
-
-.editor-image:hover .editor-image-type-badge {
     opacity: 1;
     pointer-events: auto;
 }

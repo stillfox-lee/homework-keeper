@@ -239,3 +239,83 @@
     color: #a8a29e;
     padding: 2rem 0;
 }
+
+/* 完成横幅 */
+.completion-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: linear-gradient(to right, #F59E0B, #FBBF24);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.banner-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: white;
+}
+
+.banner-icon {
+    font-size: 24px;
+}
+
+.banner-text {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.banner-confirm-btn {
+    background: white;
+    color: #F59E0B;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.banner-confirm-btn:hover {
+    transform: scale(1.05);
+}
+
+.banner-close-btn {
+    position: absolute;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banner-close-btn:hover {
+    opacity: 1;
+}
+
+/* 横幅显示时，body 添加 padding 避免内容被遮挡 */
+body.has-banner {
+    padding-top: 60px;
+}

@@ -31,6 +31,22 @@ function updateHashFilter(filter) {
 // ==================== 日期格式化 ====================
 
 /**
+ * 将 UTC 时间字符串转换为 datetime-local 输入框格式
+ * @param {string|null} utcString - ISO 格式的 UTC 时间（如 "2026-01-06T15:59:00Z"）
+ * @returns {string|null} datetime-local 格式（如 "2026-01-06T23:59"）或 null
+ */
+function utcToDatetimeLocal(utcString) {
+    if (!utcString) return null;
+    const date = new Date(utcString);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
  * 格式化日期（相对时间）
  * @param {string} dateString - ISO 日期字符串
  * @returns {string} 格式化后的日期
@@ -348,4 +364,5 @@ function createImageViewer(options) {
 }
 
 // 导出到全局
+window.utcToDatetimeLocal = utcToDatetimeLocal;
 window.createImageViewer = createImageViewer;

@@ -36,6 +36,13 @@ async function loadTodayPage(batchId) {
         todayState.images = images;
 
         render();
+
+        // 检查是否所有作业都已完成（active 批次且所有 item 都是 done）
+        if (batch.status === 'active' && items.length > 0 && items.every(item => item.status === 'done')) {
+            showCompletionBanner();
+        } else {
+            hideCompletionBanner();
+        }
     } catch (error) {
         console.error('[TodayPage] 加载失败:', error);
         showToast('加载失败，请重试');
@@ -247,7 +254,7 @@ async function handleStatusUpdate(itemId, status) {
         const result = await api.updateItemStatus(itemId, status);
 
         if (result.batch_ready_to_complete) {
-            showCompletionModal(todayState.batch.id);
+            showCompletionBanner();
             return;
         }
 
@@ -279,7 +286,27 @@ function openImageViewer(index) {
 }
 
 /**
- * 完成确认弹窗
+ * 显示完成横幅
+ */
+function showCompletionBanner() {
+    const banner = document.getElementById('completionBanner');
+    const body = document.body;
+    banner?.classList.remove('hidden');
+    body?.classList.add('has-banner');
+}
+
+/**
+ * 隐藏完成横幅
+ */
+function hideCompletionBanner() {
+    const banner = document.getElementById('completionBanner');
+    const body = document.body;
+    banner?.classList.add('hidden');
+    body?.classList.remove('has-banner');
+}
+
+/**
+ * 完成确认弹窗（已弃用，保留以防兼容性问题）
  */
 function showCompletionModal(batchId) {
     const modal = document.getElementById('completionModal');
@@ -309,6 +336,31 @@ function showCompletionModal(batchId) {
 // 初始化事件监听
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('imageViewerClose').onclick = () => imageViewer.close();
+
+    // 横幅确认按钮
+    const confirmBtn = document.getElementById('completionConfirmBtn');
+    if (confirmBtn) {
+        confirmBtn.onclick = async () => {
+            try {
+                const batchId = todayState.batch.id;
+                await api.completeBatch(batchId);
+                hideCompletionBanner();
+                showToast('作业本已完成！');
+                window.location.href = '/registry.html';
+            } catch (error) {
+                console.error('[TodayPage] 完成批次失败:', error);
+                showToast('操作出错了，再试试');
+            }
+        };
+    }
+
+    // 横幅关闭按钮（临时隐藏）
+    const closeBtn = document.getElementById('completionCloseBtn');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            hideCompletionBanner();
+        };
+    }
 
     // 键盘导航
     document.addEventListener('keydown', (e) => {

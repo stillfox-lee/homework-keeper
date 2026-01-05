@@ -12,6 +12,16 @@
     <!-- Toast 提示 -->
     <div id="toast" class="toast hidden">加载中...</div>
 
+    <!-- 完成横幅 -->
+    <div id="completionBanner" class="completion-banner hidden">
+        <div class="banner-content">
+            <span class="banner-icon">🎉</span>
+            <span class="banner-text">所有作业都写完啦！</span>
+            <button id="completionConfirmBtn" class="banner-confirm-btn">去玩咯</button>
+            <button id="completionCloseBtn" class="banner-close-btn">&times;</button>
+        </div>
+    </div>
+
     <!-- 主容器 -->
     <div id="app">
         <!-- 顶部导航 -->
@@ -66,10 +76,10 @@
         <div class="modal-content">
             <div class="modal-icon">🎉</div>
             <h2 class="modal-title">太棒了！</h2>
-            <p class="modal-text">所有作业都完成了，要标记这个作业本为「已完成」吗？</p>
+            <p class="modal-text">所有作业都完成了</p>
             <div class="modal-actions">
-                <button id="completionCancel" class="modal-btn modal-btn-secondary">稍后再说</button>
-                <button id="completionConfirm" class="modal-btn modal-btn-primary">已完成</button>
+                <button id="completionCancel" class="modal-btn modal-btn-secondary">我再看看有没有漏作业</button>
+                <button id="completionConfirm" class="modal-btn modal-btn-primary">去玩咯</button>
             </div>
         </div>
     </div>

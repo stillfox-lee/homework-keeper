@@ -65,25 +65,18 @@ frontend/
 ```
 
 **页面导航：**
+
 - `/` → 自动跳转到最近的 active 批次
 - `/today.html?id=1` → 批次详情页
 - `/registry.html` → 作业登记簿
 
 **脚本加载顺序（重要）：**
 各页面的脚本应按以下顺序加载，确保依赖正确：
+
 1. `api.js` - API 调用封装
 2. `utils.js` - 工具函数（包括 Toast 组件）
 3. 业务逻辑模块（如 `editor.js`、`today.js` 等）
 4. 页面初始化脚本
-
-**新增页面步骤：**
-1. 在 `frontend/` 创建新的 HTML 文件
-2. 在 `backend/main.py` 添加对应路由：
-   ```python
-   @app.get("/newpage.html")
-   async def newpage():
-       return FileResponse("frontend/newpage.html")
-   ```
 
 ### 前端页面设计
 
@@ -111,25 +104,16 @@ frontend/
 ### 前端组件化规范
 
 **通用组件规则：**
+
 - 通用组件定义在 `frontend/js/utils.js` 中
 - 通用组件必须导出到 `window` 对象，供其他模块使用
 - 禁止在业务模块中重复定义通用组件
 
-**Toast 组件使用规范：**
-- 统一使用 `utils.js` 中的 `showToast(message, duration)` 函数
-- Toast 仅用于显示操作结果（成功/失败/错误）
-- **禁止**使用 Toast 显示"加载中"、"正在处理"等过程性提示
-- 各页面 HTML 需包含 Toast 元素：`<div id="toast" class="toast hidden"></div>`
-
 **全局状态管理：**
+
 - 使用 `window.state` 管理全局状态（如科目列表）
 - 多个模块共享状态时，使用 `var state = window.state` 允许重复声明
 - 避免使用 `const/let` 声明可能被多个模块引用的全局变量
-
-**避免重复定义：**
-- 检查现有模块是否已定义所需函数/变量
-- 使用 `if (typeof window.fnName !== 'function')` 检查函数是否存在
-- 使用 `var` 而非 `const/let` 声明可能重复的全局变量
 
 ### 通用开发规范
 
@@ -137,6 +121,8 @@ frontend/
 - 未配置代码检查/格式化工具
 
 ### 时区处理原则（重要）
+
+前端工程也需要注意使用 UTC 时间处理原则：api 通信统一使用 utc 时间，给用户展示时间的地方需要做本地化时区转换。
 
 **统一使用 UTC 时间存储：**
 
@@ -151,6 +137,7 @@ frontend/
 | **前端显示** | 浏览器自动将 ISO 时间转换为本地时区显示 |
 
 **代码规范：**
+
 ```python
 # ✅ 正确：获取 UTC 时间
 now = datetime.utcnow()
@@ -160,8 +147,10 @@ now = datetime.now()
 ```
 
 **特殊情况：**
+
 - `generate_batch_name()` - 需要本地日期显示，转为本地时区后获取月/日
 - `calculate_deadline()` - 需要基于本地日期判断工作日，内部处理时区转换
 
 **依赖：**
+
 - `pytz` - 用于时区转换（如 `Asia/Shanghai`）

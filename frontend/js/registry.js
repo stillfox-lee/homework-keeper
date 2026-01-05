@@ -229,17 +229,20 @@ function getStatusColor(status) {
 
 /**
  * 格式化截止时间
+ * 注意：deadlineAt 是 UTC 时间，需要基于 UTC 日期进行比较
  */
 function formatDeadline(deadlineAt) {
     if (!deadlineAt) return '未设置';
 
     const deadline = new Date(deadlineAt);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const deadlineDay = new Date(deadline);
-    deadlineDay.setHours(0, 0, 0, 0);
 
-    const diffTime = deadlineDay - today;
+    // 使用 UTC 日期进行比较（避免时区转换导致的日期跳变）
+    // 例如：UTC 2026-01-06 23:59:00 存储的是 1月6日，不应因转本地时区变成 1月7日
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const deadlineUtc = Date.UTC(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate());
+
+    const diffTime = deadlineUtc - todayUtc;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return '今天';
@@ -248,10 +251,10 @@ function formatDeadline(deadlineAt) {
     if (diffDays < -1) return `${Math.abs(diffDays)}天前`;
 
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    const weekday = weekdays[deadlineDay.getDay()];
+    const weekday = weekdays[deadline.getUTCDay()];
 
     if (diffDays <= 7) return weekday;
-    return `${deadline.getMonth() + 1}/${deadline.getDate()}`;
+    return `${deadline.getUTCMonth() + 1}/${deadline.getUTCDate()}`;
 }
 
 /**
@@ -313,41 +316,17 @@ function bindEvents() {
 /**
  * 处理编辑作业
  */
-async function handleEditBatch(batchId) {
-    // 更新 URL（不刷新页面），用于刷新后恢复编辑器状态
-    const newUrl = `${window.location.pathname}?edit=${batchId}`;
-    window.history.pushState({ mode: 'edit', batchId }, '', newUrl);
-
-    // 打开编辑器（编辑模式）
-    if (typeof editorView !== 'undefined' && editorView.open) {
-        await editorView.open('edit', parseInt(batchId));
-    } else {
-        // 编辑器模块未加载，动态加载
-        const script = document.createElement('script');
-        script.src = '/frontend/js/editor.js';
-        script.onload = async () => {
-            await editorView.open('edit', parseInt(batchId));
-        };
-        document.head.appendChild(script);
-    }
+function handleEditBatch(batchId) {
+    // 跳转到编辑器页面（编辑模式）
+    window.location.href = `/editor.html?mode=edit&id=${batchId}`;
 }
 
 /**
  * 处理新建作业
  */
-async function handleNewBatch() {
-    // 打开编辑器（新建模式）
-    if (typeof editorView !== 'undefined' && editorView.open) {
-        await editorView.open('new');
-    } else {
-        // 编辑器模块未加载，动态加载
-        const script = document.createElement('script');
-        script.src = '/frontend/js/editor.js';
-        script.onload = async () => {
-            await editorView.open('new');
-        };
-        document.head.appendChild(script);
-    }
+function handleNewBatch() {
+    // 跳转到编辑器页面（新建模式）
+    window.location.href = '/editor.html?mode=new';
 }
 
 /**

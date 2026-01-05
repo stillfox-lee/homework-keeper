@@ -436,6 +436,9 @@ function handleEditorItemChange(e) {
     } else if (e.target.classList.contains('editor-item-concept')) {
         item.key_concept = e.target.value;
     }
+
+    // 文本内容变更后更新保存按钮状态
+    updateSaveButtonState();
 }
 
 /**
@@ -604,6 +607,24 @@ function renderEditorImages(images) {
 }
 
 /**
+ * 更新保存按钮状态
+ */
+function updateSaveButtonState() {
+    if (!editorElements.saveBtn) return;
+
+    // 检查是否有有效的作业项（至少有一条有文本内容）
+    const hasValidItems = editorState.items.some(item => item.text && item.text.trim() !== '');
+    editorElements.saveBtn.disabled = !hasValidItems;
+
+    // 更新按钮样式
+    if (!hasValidItems) {
+        editorElements.saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        editorElements.saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+/**
  * 渲染编辑器作业项列表
  * @param {Array} items - 作业项数组
  * @param {Array} subjects - 科目数组
@@ -617,6 +638,7 @@ function renderEditorItems(items, subjects) {
                 暂无作业项，点击下方按钮添加
             </div>
         `;
+        updateSaveButtonState();
         return;
     }
 
@@ -634,23 +656,18 @@ function renderEditorItems(items, subjects) {
             </button>
         </div>
     `).join('');
+
+    // 渲染完成后更新保存按钮状态
+    updateSaveButtonState();
 }
 
 /**
  * 渲染编辑器截止时间
- * @param {string|null} deadlineAt - 截止时间（ISO 格式）
+ * @param {string|null} deadlineAt - 截止时间（ISO 格式 UTC 时间）
  */
 function renderEditorDeadline(deadlineAt) {
     if (!editorElements.deadlineInput) return;
-
-    if (deadlineAt) {
-        const dateStr = deadlineAt.split('T')[0];
-        const timePart = deadlineAt.split('T')[1];
-        const hourMinute = timePart.substring(0, 5);
-        editorElements.deadlineInput.value = `${dateStr}T${hourMinute}`;
-    } else {
-        editorElements.deadlineInput.value = '';
-    }
+    editorElements.deadlineInput.value = utcToDatetimeLocal(deadlineAt) || '';
 }
 
 // ==================== 图片查看器函数 ====================

@@ -66,10 +66,10 @@ async def registry_page():
     return FileResponse("frontend/registry.html")
 
 
-# 未来新增页面，只需在此添加类似路由即可：
-# @app.get("/editor.html")
-# async def editor_page():
-#     return FileResponse("frontend/editor.html")
+@app.get("/{file_name:path}.html")
+async def html_files(file_name: str):
+    """通用 HTML 文件路由 - 新增页面无需再添加路由"""
+    return FileResponse(f"frontend/{file_name}.html")
 
 
 @app.get("/family/{token}")

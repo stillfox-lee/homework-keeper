@@ -6,30 +6,37 @@ from typing import Optional, List
 from datetime import datetime
 
 
+# ==================== 基础配置 ====================
+
+class BaseResponse(BaseModel):
+    """基础响应模型，配置 datetime 序列化"""
+
+    class Config:
+        from_attributes = True
+        # 确保 datetime 序列化为 ISO 格式时包含 UTC 时区标识符 'Z'
+        json_encoders = {
+            datetime: lambda v: v.isoformat() + "Z" if v else None
+        }
+
+
 # ==================== 响应模型 ====================
 
-class SubjectResponse(BaseModel):
+class SubjectResponse(BaseResponse):
     """科目响应"""
     id: int
     name: str
     color: str
     sort_order: int
 
-    class Config:
-        from_attributes = True
 
-
-class ChildResponse(BaseModel):
+class ChildResponse(BaseResponse):
     """孩子响应"""
     id: int
     family_id: int
     name: str
 
-    class Config:
-        from_attributes = True
 
-
-class BatchImageResponse(BaseModel):
+class BatchImageResponse(BaseResponse):
     """批次图片响应"""
     id: int
     batch_id: int
@@ -43,11 +50,8 @@ class BatchImageResponse(BaseModel):
     ocr_error: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
-
-class HomeworkItemResponse(BaseModel):
+class HomeworkItemResponse(BaseResponse):
     """作业项响应"""
     id: int
     batch_id: int
@@ -60,11 +64,8 @@ class HomeworkItemResponse(BaseModel):
     finished_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
-
-class HomeworkBatchResponse(BaseModel):
+class HomeworkBatchResponse(BaseResponse):
     """作业批次响应"""
     id: int
     child_id: int
@@ -77,9 +78,6 @@ class HomeworkBatchResponse(BaseModel):
     items: List[HomeworkItemResponse] = []
     images: List[BatchImageResponse] = []
     vlm_parse_result: Optional[dict] = None  # draft 状态时返回 VLM 解析结果
-
-    class Config:
-        from_attributes = True
 
 
 # ==================== 请求模型 ====================
@@ -104,7 +102,7 @@ class HomeworkItemStatusUpdate(BaseModel):
     status: str  # todo/doing/done
 
 
-class HomeworkItemStatusResponse(BaseModel):
+class HomeworkItemStatusResponse(BaseResponse):
     """作业项状态更新响应"""
     item: HomeworkItemResponse
     batch_ready_to_complete: bool = False  # 批次是否已准备好完成（全部 done 但还未 completed）
@@ -128,7 +126,7 @@ class DraftConfirmRequest(BaseModel):
 
 # ==================== 上传相关 ====================
 
-class DraftBatchInfo(BaseModel):
+class DraftBatchInfo(BaseResponse):
     """Draft 批次简要信息"""
     id: int
     name: str
@@ -136,7 +134,7 @@ class DraftBatchInfo(BaseModel):
     deadline_at: Optional[datetime] = None  # 预计算的截止时间
 
 
-class UploadDraftResponse(BaseModel):
+class UploadDraftResponse(BaseResponse):
     """上传 draft 批次响应"""
     success: bool
     data: dict
@@ -183,9 +181,6 @@ class FamilyResponse(BaseModel):
     access_token: str
     child: ChildResponse
 
-    class Config:
-        from_attributes = True
-
 
 # ==================== VLM 相关 ====================
 
@@ -212,7 +207,7 @@ class VLMParseResult(BaseModel):
     error: Optional[str] = None
 
 
-class VLMUploadDraftResponse(BaseModel):
+class VLMUploadDraftResponse(BaseResponse):
     """VLM 上传 draft 批次响应"""
     success: bool
     batch: DraftBatchInfo
