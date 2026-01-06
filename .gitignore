@@ -31,3 +31,4 @@ data/uploads/*
 
 # OCR 模型缓存
 .PaddleOCR/
+logs

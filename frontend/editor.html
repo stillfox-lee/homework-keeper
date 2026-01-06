@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>编辑作业 - 墨宝</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/frontend/css/common.css">
-    <link rel="stylesheet" href="/frontend/css/editor.css">
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/editor.css">
 </head>
 <body class="bg-amber-50 min-h-screen">
     <!-- Toast 提示 -->
@@ -100,9 +100,9 @@
         <button class="viewer-nav viewer-next" onclick="editorNextImage()">&#10095;</button>
     </div>
 
-    <script src="/frontend/js/api.js"></script>
-    <script src="/frontend/js/utils.js"></script>
-    <script src="/frontend/js/editor-page.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/editor-page.js"></script>
     <script>
         // 页面初始化：从 URL 参数获取模式和批次 ID
         document.addEventListener('DOMContentLoaded', async () => {
