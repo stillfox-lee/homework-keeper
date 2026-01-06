@@ -279,17 +279,26 @@ EOF
     fi
 
     # 输入子路径
-    read -p "请输入子路径 (如 mobo，不要带 /): " input_path
-    if [[ -n "$input_path" ]]; then
+    while true; do
+        read -p "请输入子路径 (如 mobo，不要带 /，留空使用根路径): " input_path
+        if [[ -z "$input_path" ]]; then
+            SUB_PATH=""
+            break
+        fi
         # 确保不以 / 开头
-        SUB_PATH="/${input_path#/}"
-    else
-        SUB_PATH=""
-    fi
+        input_path="${input_path#/}"
+        # 拒绝单斜杠或空值
+        if [[ "$input_path" == "/" ]] || [[ -z "$input_path" ]]; then
+            echo -e "${color_error}错误: 子路径不能是单斜杠${color_reset}"
+            continue
+        fi
+        SUB_PATH="/$input_path"
+        break
+    done
 
     if [[ -n "$SUB_PATH" ]]; then
         if grep -q "^SUB_PATH=" "$project_root/.env"; then
-            sed -i "s|^SUB_PATH=.*|SUB_PATH=$SUB_PATH/" "$project_root/.env"
+            sed -i "s|^SUB_PATH=.*|SUB_PATH=$SUB_PATH/|" "$project_root/.env"
         else
             echo "SUB_PATH=$SUB_PATH" >> "$project_root/.env"
         fi
