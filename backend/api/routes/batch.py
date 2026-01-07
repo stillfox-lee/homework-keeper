@@ -24,6 +24,7 @@ from backend.schemas import (
     BatchUpdate,
     HomeworkItemUpdateOrCreate,
 )
+from backend.config import settings
 
 router = APIRouter(prefix="/api/batches", tags=["batches"])
 
@@ -57,7 +58,7 @@ def _item_to_response(item: HomeworkItem, subject: Subject) -> HomeworkItemRespo
 def _image_to_response(img: BatchImage) -> BatchImageResponse:
     """图片转响应"""
     response = BatchImageResponse.model_validate(img)
-    response.file_path = f"/uploads/{img.file_path}"  # type: ignore
+    response.file_path = f"{settings.BASE_URL}/uploads/{img.file_path}"  # type: ignore
     return response
 
 

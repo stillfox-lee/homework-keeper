@@ -31,7 +31,7 @@ router = APIRouter(prefix="/api/upload", tags=["upload"])
 def _batch_image_to_response(img: BatchImage) -> BatchImageResponse:
     """转换批次图片为响应格式"""
     response = BatchImageResponse.model_validate(img)
-    response.file_path = f"/uploads/{img.file_path}"  # type: ignore
+    response.file_path = f"{settings.BASE_URL}/uploads/{img.file_path}"  # type: ignore
     return response
 
 

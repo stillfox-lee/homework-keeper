@@ -244,7 +244,7 @@ function renderImagesModal(batch) {
                 <div class="grid grid-cols-2 gap-4">
                     ${homeworkImages.map(img => `
                         <div class="relative">
-                            <img src="/uploads/${img.file_path}" alt="${img.file_name}" class="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
+                            <img src="${img.file_path}" alt="${img.file_name}" class="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
                         </div>
                     `).join('')}
                 </div>
@@ -259,7 +259,7 @@ function renderImagesModal(batch) {
                 <div class="grid grid-cols-2 gap-4">
                     ${referenceImages.map(img => `
                         <div class="relative">
-                            <img src="/uploads/${img.file_path}" alt="${img.file_name}" class="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
+                            <img src="${img.file_path}" alt="${img.file_name}" class="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open(this.src, '_blank')">
                         </div>
                     `).join('')}
                 </div>
