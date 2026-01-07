@@ -2,8 +2,8 @@
  * API 调用封装
  */
 
-// API 基础路径
-const API_BASE = window.location.origin;
+// API 基础路径（由 config.js 提供）
+const API_BASE = window.API_BASE || window.location.origin;
 
 // 获取带认证的请求头
 function getAuthHeaders() {

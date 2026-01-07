@@ -79,6 +79,13 @@ check_step_status() {
                 echo -e "${color_dim}○${color_reset}"
             fi
             ;;
+        frontend)
+            if [[ -f "$project_root/frontend/js/config.js" ]]; then
+                echo -e "${color_ok}✓${color_reset}"
+            else
+                echo -e "${color_dim}○${color_reset}"
+            fi
+            ;;
         init)
             if [[ -f "$project_root/data/database.db" ]]; then
                 echo -e "${color_ok}✓${color_reset}"
@@ -346,6 +353,50 @@ step_install_python_deps() {
     cd "$project_root"
     uv sync
     echo -e "${color_ok}Python 依赖安装完成${color_reset}"
+    echo
+}
+
+step_generate_frontend_config() {
+    local project_root="$1"
+
+    echo -e "${color_info}=== 生成前端配置文件 ===${color_reset}"
+
+    # 读取 .env 配置
+    if [[ ! -f "$project_root/.env" ]]; then
+        echo -e "${color_error}.env 文件不存在，请先生成配置文件${color_reset}"
+        return 1
+    fi
+
+    # 读取 DOMAIN 和 SUB_PATH
+    local domain=$(grep "^DOMAIN=" "$project_root/.env" | cut -d'=' -f2)
+    local sub_path=$(grep "^SUB_PATH=" "$project_root/.env" | cut -d'=' -f2)
+
+    if [[ -z "$domain" ]]; then
+        echo -e "${color_error}DOMAIN 未配置${color_reset}"
+        return 1
+    fi
+
+    # 判断协议（www 开头用 https）
+    local protocol="http"
+    if [[ "$domain" == www.* ]]; then
+        protocol="https"
+    fi
+
+    # 移除 sub_path 末尾的 /（如果有）
+    sub_path="${sub_path%/}"
+
+    local api_base="${protocol}://${domain}${sub_path}"
+
+    # 生成 config.js
+    cat > "$project_root/frontend/js/config.js" << EOF
+/**
+ * 前端配置文件（由 deploy.sh 自动生成，请勿手动修改）
+ */
+window.API_BASE = '$api_base';
+EOF
+
+    echo -e "${color_ok}API_BASE: $api_base${color_reset}"
+    echo -e "${color_ok}配置文件生成完成${color_reset}"
     echo
 }
 
@@ -643,14 +694,15 @@ show_menu() {
     echo "  2) 安装依赖 (uv, Python)       $(check_step_status deps "$project_root")"
     echo "  3) 生成 .env 配置文件          $(check_step_status env "$project_root")"
     echo "  4) 安装 Python 依赖            $(check_step_status install "$project_root")"
-    echo "  5) 初始化数据库                $(check_step_status init "$project_root")"
-    echo "  6) 配置 systemd 服务           $(check_step_status systemd "$project_root")"
-    echo "  7) 配置 Nginx                  $(check_step_status nginx "$project_root")"
-    echo "  8) 启动服务                    $(check_step_status running "$project_root")"
+    echo "  5) 生成前端配置文件            $(check_step_status frontend "$project_root")"
+    echo "  6) 初始化数据库                $(check_step_status init "$project_root")"
+    echo "  7) 配置 systemd 服务           $(check_step_status systemd "$project_root")"
+    echo "  8) 配置 Nginx                  $(check_step_status nginx "$project_root")"
+    echo "  9) 启动服务                    $(check_step_status running "$project_root")"
     echo
     echo "操作:"
-    echo "  1-8) 执行对应步骤"
-    echo "  9)   全部部署 (按顺序执行)"
+    echo "  1-9) 执行对应步骤"
+    echo "  a)   全部部署 (按顺序执行)"
     echo "  0)   退出"
     echo
 }
@@ -683,17 +735,18 @@ execute_step() {
         2) step_install_dependencies ;;
         3) step_generate_env "$project_root" ;;
         4) step_install_python_deps "$project_root" ;;
-        5) step_init_database "$project_root" ;;
-        6) step_configure_systemd "$project_root" ;;
-        7) step_configure_nginx "$project_root" ;;
-        8) step_start_service ;;
+        5) step_generate_frontend_config "$project_root" ;;
+        6) step_init_database "$project_root" ;;
+        7) step_configure_systemd "$project_root" ;;
+        8) step_configure_nginx "$project_root" ;;
+        9) step_start_service ;;
     esac
 }
 
 run_all_steps() {
     local project_root="$1"
 
-    for step in {1..8}; do
+    for step in {1..9}; do
         show_menu "$project_root"
         echo -e "${color_info}正在执行步骤 $step...${color_reset}"
         echo
@@ -706,7 +759,7 @@ run_all_steps() {
             fi
         fi
 
-        if [[ $step -lt 8 ]]; then
+        if [[ $step -lt 9 ]]; then
             if ! prompt_continue "继续下一步?" "y"; then
                 break
             fi
@@ -732,17 +785,17 @@ main() {
     # 主菜单循环
     while true; do
         show_menu "$PROJECT_ROOT"
-        read -p "请选择 [0-9]: " -n 1 -r choice
+        read -p "请选择 [0-9,a]: " -n 1 -r choice
         echo
 
         case "$choice" in
-            [1-8])
+            [1-9])
                 if ! execute_step "$choice" "$PROJECT_ROOT"; then
                     prompt_error "$choice" || continue
                 fi
                 read -p "按 Enter 继续..."
                 ;;
-            9)
+            a|A)
                 run_all_steps "$PROJECT_ROOT"
                 read -p "按 Enter 返回菜单..."
                 ;;
