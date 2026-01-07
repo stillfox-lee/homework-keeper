@@ -146,7 +146,7 @@ function createBookCardHTML(batch) {
 
     return `
         <div class="book-card book-card-${batch.status}" data-batch-id="${batch.id}">
-            <a href="/today.html?id=${batch.id}" class="book-link">
+            <a href="./today.html?id=${batch.id}" class="book-link">
                 <div class="book-spine" style="background: linear-gradient(90deg, ${statusColor.dark} 0%, ${statusColor.light} 100%);"></div>
                 <div class="book-pages"></div>
                 <div class="book-content">
@@ -318,7 +318,7 @@ function bindEvents() {
  */
 function handleEditBatch(batchId) {
     // 跳转到编辑器页面（编辑模式）
-    window.location.href = `/editor.html?mode=edit&id=${batchId}`;
+    window.location.href = `./editor.html?mode=edit&id=${batchId}`;
 }
 
 /**
@@ -326,7 +326,7 @@ function handleEditBatch(batchId) {
  */
 function handleNewBatch() {
     // 跳转到编辑器页面（新建模式）
-    window.location.href = '/editor.html?mode=new';
+    window.location.href = './editor.html?mode=new';
 }
 
 /**

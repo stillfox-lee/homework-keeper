@@ -102,7 +102,7 @@ function bindPageEvents() {
     // 取消按钮 - 返回登记簿
     if (editorElements.cancelBtn) {
         editorElements.cancelBtn.addEventListener('click', () => {
-            window.location.href = '/registry.html';
+            window.location.href = './registry.html';
         });
     }
 
@@ -418,7 +418,7 @@ async function handleSave() {
         }
 
         // 返回登记簿
-        window.location.href = '/registry.html';
+        window.location.href = './registry.html';
     } catch (error) {
         console.error('保存失败:', error);
         showToast('保存出错了，再试试');

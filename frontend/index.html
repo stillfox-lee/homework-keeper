@@ -62,9 +62,9 @@
             api.getCurrentBatch()
                 .then(batch => {
                     if (batch) {
-                        window.location.href = `/today.html?id=${batch.id}`;
+                        window.location.href = `./today.html?id=${batch.id}`;
                     } else {
-                        window.location.href = '/registry.html';
+                        window.location.href = './registry.html';
                     }
                 })
                 .catch(err => {

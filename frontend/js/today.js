@@ -325,7 +325,7 @@ function showCompletionModal(batchId) {
             modal.classList.add('hidden');
             showToast('作业本已完成');
             // 跳转到登记簿
-            window.location.href = '/registry.html';
+            window.location.href = './registry.html';
         } catch (error) {
             console.error('[TodayPage] 完成批次失败:', error);
             showToast('操作出错了，再试试');
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await api.completeBatch(batchId);
                 hideCompletionBanner();
                 showToast('作业本已完成！');
-                window.location.href = '/registry.html';
+                window.location.href = './registry.html';
             } catch (error) {
                 console.error('[TodayPage] 完成批次失败:', error);
                 showToast('操作出错了，再试试');
