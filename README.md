@@ -25,6 +25,9 @@ uv sync
 ```bash
 # 初始化数据库
 uv run init
+
+# 创建家庭和孩子（首次运行必须）
+uv run python -m backend.scripts.add_user --family "家庭名" --child "孩子名"
 ```
 
 ### 3. 启动服务
@@ -43,10 +46,6 @@ uv run serve --reload
 uv run python -m backend.scripts.test_ocr PATH
 uv run python -m backend.scripts.test_vlm <图片路径>...
 ```
-
-### 4. 访问应用
-
-打开浏览器访问：<http://localhost:8000>
 
 ## 生产部署
 
@@ -108,12 +107,4 @@ homework-keeper/
 
 - **后端**: Python + FastAPI + SQLAlchemy
 - **前端**: 原生 JavaScript + HTML + Tailwind CSS
-- **OCR**: PaddleOCR
 - **数据库**: SQLite
-
-## 开发计划
-
-- [ ] 集成 LLM 智能解析（kosong）
-- [ ] 节假日 API 集成，智能计算截止时间
-- [ ] 数据统计图表展示
-- [ ] 云端部署支持

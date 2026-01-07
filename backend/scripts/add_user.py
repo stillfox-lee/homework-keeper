@@ -7,7 +7,20 @@
 import sys
 import argparse
 import secrets
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
+
+
+def get_base_url() -> str:
+    """获取应用基础 URL"""
+    domain = os.getenv("DOMAIN", "localhost:8000")
+    sub_path = os.getenv("SUB_PATH", "").rstrip("/")
+    return f"http://{domain}{sub_path}"
 
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -69,7 +82,8 @@ def main():
 
         print("\n" + "=" * 50)
         print("设置完成！")
-        print(f"访问地址: http://localhost:8000/?token={family.access_token}")
+        base_url = get_base_url()
+        print(f"访问地址: {base_url}/?token={family.access_token}")
         print("=" * 50)
 
     except Exception as e:
